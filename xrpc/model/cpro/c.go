@@ -85,12 +85,7 @@ func parseAdvertParam(param map[string]string) (ap AdvertPutParam) {
 }
 
 // 创建hbase表
-func (this CproData) createTable(tableName string) error {
-	var conn, err = db.GetHbaseConn()
-	defer db.CloseHbaseConn(conn)
-	if err != nil {
-		return err
-	}
+func (this CproData) createTable(conn hbase.HBaseClient, tableName string) error {
 	ok, err := conn.TableExists(tableName)
 	if err != nil {
 		return err
@@ -118,7 +113,7 @@ func (this CproData) ReocrdCookie(param map[string]string) error {
 		return err
 	}
 	defer db.CloseHbaseConn(conn)
-	if err := this.createTable(tableName); err != nil {
+	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}
 
@@ -150,7 +145,7 @@ func (this CproData) DomainVisitor(cookie string, domain string) error {
 		return err
 	}
 	defer db.CloseHbaseConn(conn)
-	if err := this.createTable(tableName); err != nil {
+	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}
 
@@ -214,8 +209,10 @@ func (this CproData) RecordAdvertPutInfo(param map[string]string) error {
 		return err
 	}
 
-	defer db.CloseHbaseConn(conn)
-	if err := this.createTable(tableName); err != nil {
+	defer func() {
+		db.CloseHbaseConn(conn)
+	}()
+	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}
 
