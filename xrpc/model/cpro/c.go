@@ -3,7 +3,8 @@ package cpro
 import (
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/juju/errors"
-	"github.com/pingcap/go-hbase"
+	"github.com/qgweb/go-hbase"
+	"github.com/qgweb/new/lib/encrypt"
 	"github.com/qgweb/new/lib/timestamp"
 	"github.com/qgweb/new/xrpc/db"
 	"gopkg.in/mgo.v2/bson"
@@ -13,6 +14,7 @@ import (
 type CproData struct {
 }
 
+// cookie参数
 type CookieParam struct {
 	id     string
 	cox    string
@@ -22,6 +24,15 @@ type CookieParam struct {
 	pid    string
 	cid    string
 	is_new string
+}
+
+// 投放广告记录参数
+type AdvertPutParam struct {
+	ua     string //user-agent
+	ad     string //cox
+	pv     string //pv
+	click  string //点击
+	advert string //广告id
 }
 
 // 解析cookie参数
@@ -53,9 +64,33 @@ func parseCookieParam(param map[string]string) (cp CookieParam) {
 	return
 }
 
+// 解析广告参数
+func parseAdvertParam(param map[string]string) (ap AdvertPutParam) {
+	if v, ok := param["advert"]; ok {
+		ap.advert = v
+	}
+	if v, ok := param["ad"]; ok {
+		ap.ad = v
+	}
+	if v, ok := param["ua"]; ok {
+		ap.ua = v
+	}
+	if v, ok := param["pv"]; ok {
+		ap.pv = v
+	}
+	if v, ok := param["click"]; ok {
+		ap.click = v
+	}
+	return
+}
+
 // 创建hbase表
 func (this CproData) createTable(tableName string) error {
-	var conn = db.GetHbaseConn()
+	var conn, err = db.GetHbaseConn()
+	defer db.CloseHbaseConn(conn)
+	if err != nil {
+		return err
+	}
 	ok, err := conn.TableExists(tableName)
 	if err != nil {
 		return err
@@ -75,10 +110,14 @@ func (this CproData) createTable(tableName string) error {
 func (this CproData) ReocrdCookie(param map[string]string) error {
 	var (
 		cp        = parseCookieParam(param)
-		conn      = db.GetHbaseConn()
+		conn, err = db.GetHbaseConn()
 		tableName = "xu-cookie"
 	)
 
+	if err != nil {
+		return err
+	}
+	defer db.CloseHbaseConn(conn)
 	if err := this.createTable(tableName); err != nil {
 		return err
 	}
@@ -102,12 +141,15 @@ func (this CproData) ReocrdCookie(param map[string]string) error {
 // 域名访客找回
 func (this CproData) DomainVisitor(cookie string, domain string) error {
 	var (
-		conn       = db.GetHbaseConn()
+		conn, err  = db.GetHbaseConn()
 		date       = timestamp.GetDayTimestamp(0)
 		maindomain = ""
 		tableName  = "domain-cookie"
 	)
-
+	if err != nil {
+		return err
+	}
+	defer db.CloseHbaseConn(conn)
 	if err := this.createTable(tableName); err != nil {
 		return err
 	}
@@ -152,6 +194,53 @@ func (this CproData) DomainEffect(id string) error {
 		if n, err := r.RowsAffected(); err == nil && n > 0 {
 			mem.Set(&memcache.Item{Key: key, Value: []byte("1")})
 		}
+	}
+
+	return nil
+}
+
+// 记录广告投放信息
+// 包括点击，pv,ad,ua等
+func (this CproData) RecordAdvertPutInfo(param map[string]string) error {
+	var (
+		ap        = parseAdvertParam(param)
+		conn, err = db.GetHbaseConn()
+		tableName = "advert-put-record"
+		key       = ap.advert + "_" + encrypt.DefaultMd5.Encode(ap.ad+encrypt.DefaultBase64.Encode(ap.ua))
+		merr      string
+	)
+
+	if err != nil {
+		return err
+	}
+
+	defer db.CloseHbaseConn(conn)
+	if err := this.createTable(tableName); err != nil {
+		return err
+	}
+
+	put := hbase.NewPut([]byte(key))
+	put.AddStringValue("base", "ad", ap.ad)
+	put.AddStringValue("base", "ua", encrypt.DefaultBase64.Encode(ap.ua))
+	put.AddStringValue("base", "aid", ap.advert)
+
+	incr := hbase.NewIncr([]byte(key))
+	if ap.pv == "1" {
+		incr.AddStringValue("base", "pv", 1)
+	}
+	if ap.click == "1" {
+		incr.AddStringValue("base", "click", 1)
+	}
+
+	if _, err := conn.Put(tableName, put); err != nil {
+		merr = merr + err.Error()
+	}
+	if _, err := conn.Incr(tableName, incr); err != nil {
+		merr = merr + "|" + err.Error()
+	}
+
+	if merr != "" {
+		return errors.New(merr)
 	}
 
 	return nil
