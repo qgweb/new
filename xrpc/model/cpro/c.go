@@ -105,14 +105,10 @@ func (this CproData) createTable(conn hbase.HBaseClient, tableName string) error
 func (this CproData) ReocrdCookie(param map[string]string) error {
 	var (
 		cp        = parseCookieParam(param)
-		conn, err = db.GetHbaseConn()
+		conn      = db.GetHbaseConn()
 		tableName = "xu-cookie"
 	)
 
-	if err != nil {
-		return err
-	}
-	defer db.CloseHbaseConn(conn)
 	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}
@@ -136,15 +132,12 @@ func (this CproData) ReocrdCookie(param map[string]string) error {
 // 域名访客找回
 func (this CproData) DomainVisitor(cookie string, domain string) error {
 	var (
-		conn, err  = db.GetHbaseConn()
+		conn       = db.GetHbaseConn()
 		date       = timestamp.GetDayTimestamp(0)
 		maindomain = ""
 		tableName  = "domain-cookie"
 	)
-	if err != nil {
-		return err
-	}
-	defer db.CloseHbaseConn(conn)
+
 	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}
@@ -199,19 +192,12 @@ func (this CproData) DomainEffect(id string) error {
 func (this CproData) RecordAdvertPutInfo(param map[string]string) error {
 	var (
 		ap        = parseAdvertParam(param)
-		conn, err = db.GetHbaseConn()
+		conn      = db.GetHbaseConn()
 		tableName = "advert-put-record"
 		key       = ap.advert + "_" + encrypt.DefaultMd5.Encode(ap.ad+encrypt.DefaultBase64.Encode(ap.ua))
 		merr      string
 	)
 
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		db.CloseHbaseConn(conn)
-	}()
 	if err := this.createTable(conn, tableName); err != nil {
 		return err
 	}

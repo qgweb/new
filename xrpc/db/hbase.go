@@ -1,66 +1,39 @@
 package db
 
 import (
-	"github.com/ngaut/log"
 	"github.com/qgweb/go-hbase"
-	"github.com/qgweb/new/lib/pool"
 	"github.com/qgweb/new/xrpc/config"
-	"github.com/juju/errors"
+	"github.com/ngaut/log"
 )
 
 var (
-	hbaseConn pool.Pool
+	hbaseConn hbase.HBaseClient
 	err       error
 )
 
 func init() {
-	initConn()
+	initHbaseConn()
 }
 
-func initConn() {
+func initHbaseConn() {
 	var (
-		host = config.GetConf().Section("hbase").Key("host").String()
+		host = config.GetConf().Section("hbase").Key("host").Strings(",")
 		port = config.GetConf().Section("hbase").Key("port").String()
 	)
 
-	var newFactory = func() (interface{}, error) {
-		conn, err := hbase.NewClient([]string{host + ":" + port}, "/hbase")
-		if err != nil {
-			return nil, err
-		}
-		return conn, err
+	for k, _ := range host {
+		host[k] += ":" + port
 	}
 
-	var closeFactory = func(conn interface{}) error {
-		if c, ok := conn.(hbase.HBaseClient); ok {
-			c.Close()
-		}
-		return nil
-	}
-
-	hbaseConn, err = pool.NewChannelPool(100, newFactory, closeFactory)
-	if err != nil {
-		log.Fatal(err)
-		return
+	hbaseConn, err = hbase.NewClient(host, "/hbase")
+	if err !=nil {
+		log.Error(err)
 	}
 }
 
-func GetHbaseConn() (hbase.HBaseClient,error) {
+func GetHbaseConn() hbase.HBaseClient {
 	if hbaseConn == nil {
-		initConn()
+		initHbaseConn()
 	}
-
-	if conn,err:=hbaseConn.Get();err != nil {
-		return nil,err
-	} else {
-		if v, ok := conn.(hbase.HBaseClient); ok {
-		return v,nil
-	}
-	}
-
-	return nil,errors.New("无法获取hbase连接")
-}
-
-func CloseHbaseConn(conn interface{}) error {
-	return hbaseConn.Put(conn)
+	return hbaseConn
 }
