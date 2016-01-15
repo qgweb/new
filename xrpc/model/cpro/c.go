@@ -8,7 +8,6 @@ import (
 	"github.com/qgweb/new/lib/timestamp"
 	"github.com/qgweb/new/xrpc/db"
 	"gopkg.in/mgo.v2/bson"
-	"strings"
 )
 
 type CproData struct {
@@ -130,11 +129,10 @@ func (this CproData) ReocrdCookie(param map[string]string) error {
 }
 
 // 域名访客找回
-func (this CproData) DomainVisitor(cookie string, domain string) error {
+func (this CproData) DomainVisitor(pkgId string, cookie string, domain string) error {
 	var (
 		conn       = db.GetHbaseConn()
 		date       = timestamp.GetDayTimestamp(0)
-		maindomain = ""
 		tableName  = "domain-cookie"
 	)
 
@@ -142,17 +140,7 @@ func (this CproData) DomainVisitor(cookie string, domain string) error {
 		return err
 	}
 
-	ds := strings.Split(domain, ".")
-	switch len(ds) {
-	case 1:
-		return errors.New("域名格式错误")
-	case 2:
-		maindomain = domain
-	default:
-		maindomain = strings.Join(ds[1:], ".")
-	}
-
-	put := hbase.NewPut([]byte(maindomain + "_" + date + "_" + cookie))
+	put := hbase.NewPut([]byte(pkgId + "_" + date + "_" + cookie))
 	put.AddStringValue("base", "date", timestamp.GetDayTimestamp(0))
 	put.AddStringValue("base", "cookie", cookie)
 	put.AddStringValue("base", "domain", domain)

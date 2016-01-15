@@ -50,6 +50,13 @@ func GetObjectId() string {
 	return bson.NewObjectId().Hex()
 }
 
+func ObjectId(v string) bson.ObjectId {
+	if bson.IsObjectIdHex(v) {
+		return bson.ObjectIdHex(v)
+	}
+	return bson.NewObjectId()
+}
+
 func NewMongodb(conf MongodbConf) (*Mongodb, error) {
 	if conf.DialTimeout == 0 {
 		conf.DialTimeout = time.Second * 30
@@ -78,9 +85,18 @@ func (this *Mongodb) Get() (*Mongodb, error) {
 	return &Mongodb{sync.RWMutex{}, this.conn.Copy(), this.conf}, nil
 }
 
+func (this *Mongodb) GetConf() MongodbConf {
+	return this.conf
+}
+
 func (this *Mongodb) Count(qconf MongodbQueryConf) (int, error) {
 	c, err := this.conn.DB(qconf.Db).C(qconf.Table).Find(qconf.Query).Count()
 	return c, errors.Trace(err)
+}
+
+func (this *Mongodb) One(qconf MongodbQueryConf) (info map[string]interface{}, err error) {
+	err = this.conn.DB(qconf.Db).C(qconf.Table).Find(qconf.Query).Select(qconf.Select).One(&info)
+	return
 }
 
 func (this *Mongodb) Query(qconf MongodbQueryConf, fun func(map[string]interface{})) error {
@@ -98,6 +114,10 @@ func (this *Mongodb) Query(qconf MongodbQueryConf, fun func(map[string]interface
 
 func (this *Mongodb) Insert(qconf MongodbQueryConf) error {
 	return errors.Trace(this.conn.DB(qconf.Db).C(qconf.Table).Insert(qconf.Insert...))
+}
+
+func (this *Mongodb) Create(qconf MongodbQueryConf) error {
+	return errors.Trace(this.conn.DB(qconf.Db).C(qconf.Table).Create(&mgo.CollectionInfo{}))
 }
 
 func (this *Mongodb) Drop(qconf MongodbQueryConf) error {
@@ -121,3 +141,33 @@ func (this *Mongodb) Upsert(qconf MongodbQueryConf) (*mgo.ChangeInfo, error) {
 func (this *Mongodb) EnsureIndex(qconf MongodbQueryConf) error {
 	return errors.Trace(this.conn.DB(qconf.Db).C(qconf.Table).EnsureIndexKey(qconf.Index...))
 }
+
+func (this *Mongodb) Close() {
+	this.conn.Close()
+}
+
+
+
+type MongodbBufferWriter struct {
+	mdb     *Mongodb
+	mdbconf MongodbQueryConf
+}
+
+func NewMongodbBufferWriter(mdb *Mongodb, conf MongodbQueryConf) *MongodbBufferWriter {
+	return &MongodbBufferWriter{mdb, conf}
+}
+
+// 批量添加，到阀值自动insert
+func (this *MongodbBufferWriter) Write (value interface{}, size int) {
+	this.mdbconf.Insert = append(this.mdbconf.Insert, value)
+	if len(this.mdbconf.Insert) == size {
+		this.mdb.Insert(this.mdbconf)
+		this.mdbconf.Insert = make([]interface{},0)
+	}
+}
+
+func (this *MongodbBufferWriter) Flush() {
+	this.mdb.Insert(this.mdbconf)
+}
+
+
