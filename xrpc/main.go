@@ -9,8 +9,8 @@ import (
 
 func main() {
 	var (
-		host = config.GetConf().Section("default").Key("host").String()
-		port = config.GetConf().Section("default").Key("port").String()
+		host = config.GetConf().String("default::host")
+		port = config.GetConf().String("default::port")
 	)
 	service := hprose.NewHttpService()
 	service.AddFunction("domain-visitor", cpro.CproData{}.DomainVisitor)

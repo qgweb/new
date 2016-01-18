@@ -17,11 +17,11 @@ func init() {
 
 func initMysqlConn() {
 	var (
-		host = config.GetConf().Section("mysql").Key("host").String()
-		port = config.GetConf().Section("mysql").Key("port").String()
-		db   = config.GetConf().Section("mysql").Key("db").String()
-		user = config.GetConf().Section("mysql").Key("user").String()
-		pwd  = config.GetConf().Section("mysql").Key("pwd").String()
+		host = config.GetConf().String("mysql::host")
+		port = config.GetConf().String("mysql::port")
+		db   = config.GetConf().String("mysql::db")
+		user = config.GetConf().String("mysql::user")
+		pwd  = config.GetConf().String("mysql::pwd")
 	)
 	orm.RegisterDataBase("default", "mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8", user, pwd, host, port, db), 100)
 	mysqlConn = orm.NewOrm()

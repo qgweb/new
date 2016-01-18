@@ -1,9 +1,10 @@
 package db
 
 import (
+	"github.com/ngaut/log"
 	"github.com/qgweb/go-hbase"
 	"github.com/qgweb/new/xrpc/config"
-	"github.com/ngaut/log"
+	"strings"
 )
 
 var (
@@ -17,16 +18,17 @@ func init() {
 
 func initHbaseConn() {
 	var (
-		host = config.GetConf().Section("hbase").Key("host").Strings(",")
-		port = config.GetConf().Section("hbase").Key("port").String()
+		host = config.GetConf().String("hbase::host")
+		port = config.GetConf().String("hbase::port")
 	)
 
-	for k, _ := range host {
-		host[k] += ":" + port
+	hosts := strings.Split(host, ",")
+	for k, _ := range hosts {
+		hosts[k] += ":" + port
 	}
 
-	hbaseConn, err = hbase.NewClient(host, "/hbase")
-	if err !=nil {
+	hbaseConn, err = hbase.NewClient(hosts, "/hbase")
+	if err != nil {
 		log.Error(err)
 	}
 }

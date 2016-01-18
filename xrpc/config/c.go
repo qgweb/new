@@ -3,12 +3,12 @@ package config
 import (
 	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/common"
-	"gopkg.in/ini.v1"
-	"io/ioutil"
+	"github.com/qgweb/new/lib/config"
 )
 
 var (
-	confFile *ini.File
+	confFile config.ConfigContainer
+	err      error
 )
 
 func init() {
@@ -17,19 +17,14 @@ func init() {
 
 func initConn() {
 	fileName := common.GetBasePath() + "/conf/conf.ini"
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	confFile, err = ini.Load(data)
+	confFile, err = config.NewConfig("ini", fileName)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 }
 
-func GetConf() *ini.File {
+func GetConf() config.ConfigContainer {
 	if confFile == nil {
 		initConn()
 	}

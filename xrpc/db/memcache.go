@@ -15,8 +15,8 @@ func init() {
 
 func initMemcacheConn() {
 	var (
-		host = config.GetConf().Section("memcache").Key("host").String()
-		port = config.GetConf().Section("memcache").Key("port").String()
+		host = config.GetConf().String("memcache::host")
+		port = config.GetConf().String("memcache::port")
 	)
 
 	mClient = memcache.New(host + ":" + port)
