@@ -10,6 +10,7 @@ const (
 var (
 	DefaultBase64  Base64
 	DefaultMd5     Md5
+	DefaultSha1    SHA1
 	DefaultUrlcode UrlCode
 	DefaultAes     Aes
 )

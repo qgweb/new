@@ -8,7 +8,7 @@ import (
 type MemConfig struct {
 	Host string
 	Port string
-	Db   string
+	Db string
 }
 
 type MemCache struct {
