@@ -3,6 +3,7 @@ package rediscache
 import (
 	"fmt"
 	"github.com/garyburd/redigo/redis"
+	"github.com/juju/errors"
 )
 
 type MemConfig struct {
@@ -21,6 +22,21 @@ func New(config MemConfig) (*MemCache, error) {
 		return nil, err
 	}
 	return &MemCache{conn}, nil
+}
+
+func NewMul(config MemConfig, size int) ([]*MemCache, error) {
+	if size <= 0 {
+		return nil, errors.New("size不能小于0")
+	}
+	ms := make([]*MemCache, 0, size)
+	for i := 0; i < size; i++ {
+		if db, err := New(config); err != nil {
+			return nil, err
+		} else {
+			ms = append(ms, db)
+		}
+	}
+	return ms, nil
 }
 
 func (this *MemCache) Get(key string) string {

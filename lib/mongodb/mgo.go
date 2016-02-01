@@ -85,6 +85,27 @@ func (this *Mongodb) Get() (*Mongodb, error) {
 	return &Mongodb{sync.RWMutex{}, this.conn.Copy(), this.conf}, nil
 }
 
+//获取多个实例
+func (this *Mongodb) GetMul(size int) ([]*Mongodb, error) {
+	this.Lock()
+	defer this.Unlock()
+	if err := this.conn.Ping(); err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	if size <= 0 {
+		return nil, errors.New("参数不能小于0")
+	}
+
+	db := make([]*Mongodb, 0, size)
+
+	for i := 0; i < size; i++ {
+		db = append(db, &Mongodb{sync.RWMutex{}, this.conn.Copy(), this.conf})
+	}
+
+	return db, nil
+}
+
 func (this *Mongodb) GetConf() MongodbConf {
 	return this.conf
 }
@@ -146,7 +167,9 @@ func (this *Mongodb) Close() {
 	this.conn.Close()
 }
 
-
+func (this *Mongodb) getColl(qconf MongodbQueryConf) *mgo.Collection {
+	return this.conn.DB(qconf.Db).C(qconf.Table)
+}
 
 type MongodbBufferWriter struct {
 	mdb     *Mongodb
@@ -158,11 +181,11 @@ func NewMongodbBufferWriter(mdb *Mongodb, conf MongodbQueryConf) *MongodbBufferW
 }
 
 // 批量添加，到阀值自动insert
-func (this *MongodbBufferWriter) Write (value interface{}, size int) {
+func (this *MongodbBufferWriter) Write(value interface{}, size int) {
 	this.mdbconf.Insert = append(this.mdbconf.Insert, value)
 	if len(this.mdbconf.Insert) == size {
 		this.mdb.Insert(this.mdbconf)
-		this.mdbconf.Insert = make([]interface{},0)
+		this.mdbconf.Insert = make([]interface{}, 0)
 	}
 }
 
@@ -170,4 +193,19 @@ func (this *MongodbBufferWriter) Flush() {
 	this.mdb.Insert(this.mdbconf)
 }
 
+type MongodbBulkWriter struct {
+	bulk *BufferedBulkInserter
+}
 
+func NewMongodbBulkWriter(mdb *Mongodb, conf MongodbQueryConf, size int) *MongodbBulkWriter {
+	return &MongodbBulkWriter{NewBufferedBulkInserter(mdb.getColl(conf), size, false)}
+}
+
+// 批量添加，到阀值自动insert
+func (this *MongodbBulkWriter) Write(value interface{}) {
+	this.bulk.Insert(value)
+}
+
+func (this *MongodbBulkWriter) Flush() {
+	this.bulk.Flush()
+}

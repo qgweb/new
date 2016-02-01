@@ -24,3 +24,10 @@ func GetDayTimestamp(day int) string {
 	a, _ := time.ParseInLocation("20060102", d, time.Local)
 	return convert.ToString(a.Unix())
 }
+
+// 获取月的时间戳
+func GetMonthTimestamp(month int) string {
+	d := time.Now().AddDate(0, month, 0).Format("200601")
+	a, _ := time.ParseInLocation("200601", d, time.Local)
+	return convert.ToString(a.Unix())
+}
