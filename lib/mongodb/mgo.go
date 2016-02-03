@@ -50,6 +50,10 @@ func GetObjectId() string {
 	return bson.NewObjectId().Hex()
 }
 
+func IsObjectId(v string) bool {
+	return bson.IsObjectIdHex(v)
+}
+
 func ObjectId(v string) bson.ObjectId {
 	if bson.IsObjectIdHex(v) {
 		return bson.ObjectIdHex(v)

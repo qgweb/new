@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/qgweb/xcrontab/model/zhejiang/middle"
+	zjmiddle "github.com/qgweb/new/xcrontab/model/zhejiang/middle"
 	"os"
 )
 
@@ -13,7 +13,8 @@ func main() {
 	app.Version = "0.0.1"
 
 	app.Commands = []cli.Command{
-		middle.NewUrlTrack(),
+		zjmiddle.CliDomain(),
+		zjmiddle.CliUserTrack(),
 	}
 
 	app.Run(os.Args)
