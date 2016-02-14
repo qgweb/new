@@ -183,7 +183,6 @@ func (this *UserTrack) otherData(out chan interface{}, in chan int8) {
 			}
 		}
 		out <- fmt.Sprintf("%s\t%s\t%s", ad, ua, strings.Join(cids, ","))
-
 	})
 	in <- 1
 }
