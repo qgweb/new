@@ -29,6 +29,8 @@ func main() {
 	switch *gtype {
 	case "taobao":
 		cl = model.TaobaoCrawl{}
+	case "jd":
+		cl = model.JDCrawl{}
 	}
 
 	tbc := model.NewNSQDataStream(config, cl)
