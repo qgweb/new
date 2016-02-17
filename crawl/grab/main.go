@@ -25,6 +25,7 @@ func main() {
 	config.SendKey = *sendkey
 
 	var cl model.Crawler
+	var ds model.DataStreamer
 
 	switch *gtype {
 	case "taobao":
@@ -33,8 +34,6 @@ func main() {
 		cl = model.JDCrawl{}
 	}
 
-	tbc := model.NewNSQDataStream(config, cl)
-	tbc.Receive()
-
-	select {}
+	ds = model.NewNSQDataStream(config, cl)
+	ds.Receive()
 }

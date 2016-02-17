@@ -100,9 +100,7 @@ func GrabTaoHTML(url string) string {
 	}
 	//	client.Lock()
 	//	defer client.Unlock()
-	mux.Lock()
 	resp, err := client.Do(req)
-	mux.Unlock()
 	if err != nil {
 		log.Error(err)
 		return ""

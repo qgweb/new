@@ -7,9 +7,15 @@ import (
 )
 
 // 获取当前时间戳
-func GetTimestamp() string {
+// 2006-01-02 15:04:05
+func GetTimestamp(v ...interface{}) string {
+	if len(v) > 0 {
+		a,_:=time.ParseInLocation("2006-01-02 15:04:05",v[0].(string),time.Local)
+		return convert.ToString(a.Unix())
+	}
 	return convert.ToString(time.Now().Unix())
 }
+
 
 // 获取某个小时的时间戳
 func GetHourTimestamp(hour int) string {
