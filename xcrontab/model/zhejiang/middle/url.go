@@ -12,6 +12,7 @@ import (
 	"github.com/qgweb/new/xcrontab/common"
 	"runtime/debug"
 	"strings"
+	"time"
 )
 
 func CliDomain() cli.Command {
@@ -62,7 +63,7 @@ func (this *Domain) cleanPutTable() {
 
 func (this *Domain) domainData(out chan interface{}, in chan int8) {
 	var (
-		tname = "zhejiang_urltrack_" + timestamp.GetMonthTimestamp(0)
+		tname = "zhejiang_urltrack_" + time.Now().Format("200601")
 		btime = timestamp.GetHourTimestamp(-1)
 		etime = timestamp.GetHourTimestamp(0)
 	)

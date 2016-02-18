@@ -23,5 +23,7 @@ func (this JDCrawl) Grab(gid string) map[string]interface{} {
 	info["brand"] = grab.GetJDBrand(p)
 	//属性
 	info["attribute"] = grab.GetJDAttributes(p)
+	//id
+	info["gid"] = gid
 	return info
 }

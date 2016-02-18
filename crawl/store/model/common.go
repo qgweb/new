@@ -1,13 +1,18 @@
 package model
 
 import (
+	"flag"
 	"fmt"
 	"github.com/ngaut/log"
 	"github.com/nsqio/go-nsq"
 )
 
+type DataStorer interface {
+	Receive(string, string, string)
+}
+
 type Storer interface {
-	ParseData(interface{})interface{}
+	ParseData(interface{}) interface{}
 	Save(interface{})
 }
 
@@ -38,4 +43,40 @@ func (this *DataStore) Receive(rkey string, host string, port string) {
 			return
 		}
 	}
+}
+
+type Config struct {
+	NsqHost       string
+	NsqPort       string
+	HbaseHost     string
+	HbasePort     string
+	MgoStoreHost  string
+	MgoStorePort  string
+	mgoStoreUname string
+	mgoStoreUpwd  string
+	MgoPutHost    string
+	MgoPutPort    string
+	ReceiveKey    string
+	TablePrefixe  string //*前缀无_
+	ESHost        string
+	GType         string //数据源类型，淘宝，京东
+}
+
+func ParseConfig() (cg Config) {
+	flag.StringVar(&cg.NsqHost, "nsq-host", "127.0.0.1", "nsq 地址")
+	flag.StringVar(&cg.NsqPort, "nsq-port", "4150", "nsq 端口")
+	flag.StringVar(&cg.HbaseHost, "hbase-host", "192.168.1.218", "hbase 地址")
+	flag.StringVar(&cg.HbasePort, "hbase-port", "2181", "hbase 端口")
+	flag.StringVar(&cg.ReceiveKey, "rKey", "", "receive key")
+	flag.StringVar(&cg.MgoStoreHost, "mdb-store-host", "192.168.1.199", "mongodb地址")
+	flag.StringVar(&cg.MgoStorePort, "mdb-store-port", "27017", "mongodb端口")
+	flag.StringVar(&cg.mgoStoreUname, "mdb-store-uname", "", "mongodb用户名")
+	flag.StringVar(&cg.mgoStoreUpwd, "mdb-store-upwd", "", "mongodb用户密码")
+	flag.StringVar(&cg.MgoPutHost, "mdb-put-host", "192.168.1.199", "mongodb地址")
+	flag.StringVar(&cg.MgoPutPort, "mdb-put-port", "27017", "mongodb端口")
+	flag.StringVar(&cg.TablePrefixe, "table_prefixe", "zhejiang_", "表前缀")
+	flag.StringVar(&cg.ESHost, "es-host", "http://192.168.1.218:9200", "es地址多个，按逗号隔开")
+	flag.StringVar(&cg.GType, "gtype", "taobao", "类型：taobao,jd")
+	flag.Parse()
+	return
 }

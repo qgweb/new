@@ -6,6 +6,7 @@ import (
 	"github.com/ngaut/log"
 	"github.com/nsqio/go-nsq"
 	"github.com/qgweb/new/lib/encrypt"
+	"math/rand"
 	"net/url"
 	"strings"
 	"time"
@@ -78,6 +79,10 @@ func (this *NSQDataStream) HandleMessage(message *nsq.Message) error {
 	}
 
 	this.Dispatch(urlData)
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	_=time.Millisecond * time.Duration(r.Intn(1000) + 200)
+	time.Sleep(time.Microsecond)
 	return nil
 }
 

@@ -2,28 +2,12 @@ package model
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/mongodb"
 	"github.com/qgweb/new/lib/timestamp"
 	"time"
 )
-
-type Config struct {
-	NsqHost       string
-	NsqPort       string
-	HbaseHost     string
-	HbasePort     string
-	MgoStoreHost  string
-	MgoStorePort  string
-	mgoStoreUname string
-	mgoStoreUpwd  string
-	MgoPutHost    string
-	MgoPutPort    string
-	ReceiveKey    string
-	TablePrefixe  string //前缀无_
-}
 
 type Goods struct {
 	Gid        string         `json:"gid",bson:"gid"`
@@ -56,23 +40,6 @@ type UserLocus struct {
 	UA     string
 	Hour   string
 	TagIds []string
-}
-
-func ParseConfig() (cg Config) {
-	flag.StringVar(&cg.NsqHost, "nsq-host", "127.0.0.1", "nsq 地址")
-	flag.StringVar(&cg.NsqPort, "nsq-port", "4150", "nsq 端口")
-	flag.StringVar(&cg.HbaseHost, "hbase-host", "192.168.1.218", "hbase 地址")
-	flag.StringVar(&cg.HbasePort, "hbase-port", "2181", "hbase 端口")
-	flag.StringVar(&cg.ReceiveKey, "rKey", "", "receive key")
-	flag.StringVar(&cg.MgoStoreHost, "mdb-store-host", "192.168.1.199", "mongodb地址")
-	flag.StringVar(&cg.MgoStorePort, "mdb-store-port", "27017", "mongodb端口")
-	flag.StringVar(&cg.mgoStoreUname, "mdb-store-uname", "", "mongodb用户名")
-	flag.StringVar(&cg.mgoStoreUpwd, "mdb-store-upwd", "", "mongodb用户密码")
-	flag.StringVar(&cg.MgoPutHost, "mdb-put-host", "192.168.1.199", "mongodb地址")
-	flag.StringVar(&cg.MgoPutPort, "mdb-put-port", "27017", "mongodb端口")
-	flag.StringVar(&cg.TablePrefixe, "table_prefixe", "zhejiang_", "表前缀")
-	flag.Parse()
-	return
 }
 
 type TaobaoMongoStore struct {
@@ -146,11 +113,15 @@ func (this *TaobaoMongoStore) saveGoods(gs []Goods) {
 func (this *TaobaoMongoStore) saveAdTrace(cd *CombinationData) {
 	t := this.prefix + "_ad_tags_clock"
 	c := "cids." + cd.Clock
+	cids := make([]string, 0, len(cd.Ginfos))
+	for _, v := range cd.Ginfos {
+		cids = append(cids, v.Tagid)
+	}
 	q := mongodb.MongodbQueryConf{}
 	q.Db = "xu_precise"
 	q.Table = t
 	q.Query = mongodb.MM{"ad": cd.Ad, "ua": cd.Ua, "date": cd.Date}
-	q.Update = mongodb.MM{"$set": mongodb.MM{c: cd.Uids}}
+	q.Update = mongodb.MM{"$set": mongodb.MM{c: cids}}
 	this.store.Upsert(q)
 }
 
@@ -186,8 +157,7 @@ func (this *TaobaoMongoStore) pushTrace(cd *CombinationData) {
 	q := mongodb.MongodbQueryConf{}
 	q.Db = "data_source"
 	q.Table = t
-	q.Query = mongodb.MM{"AD": cd.Ad, "UA": cd.Ua,
-		"timestamp": ts}
+	q.Query = mongodb.MM{"AD": cd.Ad, "UA": cd.Ua, "hour": cd.Clock, "day": time.Now().Format("20060102")}
 
 	v, _ := this.put.Count(q)
 	if v == 0 {
@@ -197,6 +167,8 @@ func (this *TaobaoMongoStore) pushTrace(cd *CombinationData) {
 				"AD":        cd.Ad,
 				"UA":        cd.Ua,
 				"tag":       tags,
+				"hour":      cd.Clock,
+				"day":       time.Now().Format("20060102"),
 				"timestamp": ts,
 			},
 		}
@@ -238,6 +210,7 @@ type TaoBaoDataStore struct {
 
 func NewTaoBaoDataStore(c Config) *TaoBaoDataStore {
 	tbs := &TaoBaoDataStore{}
-	tbs.DataStore.sr = NewTaobaoMongoStore(c)
+	//tbs.DataStore.sr = NewTaobaoMongoStore(c)
+	tbs.DataStore.sr = NewTaobaoESStore(c)
 	return tbs
 }
