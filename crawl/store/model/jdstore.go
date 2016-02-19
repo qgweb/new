@@ -16,7 +16,7 @@ type JDGoods struct {
 	Tagname   string   `json:"cat_name",bson:"cat_name"`
 	Tagid     string   `json:"cat_id",bson:"cat_id"`
 	Brand     string   `json:"brand",bson:"brand"`
-	Attribute []string `json:"attribute",bson:"attributes"`
+	Attribute []string `json:"attributes",bson:"attributes"`
 	Title     string   `json:"title",bson:"title"`
 }
 

@@ -21,8 +21,7 @@ type Goods struct {
 	Shop_name  string         `json:"shop_name",bson:"shop_name"`
 	Shop_url   string         `json:"shop_url",bson:"shop_url"`
 	Shop_boss  string         `json:"shop_boss",bson:"shop_boss"`
-	Count      int            `json:"count",bson:"count"`
-	Exists     int            `json:"exists",bson:"exists"`
+	Brand      string         `json:"brand",bson:"brand"`
 }
 
 type CombinationData struct {
