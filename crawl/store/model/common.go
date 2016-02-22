@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/ngaut/log"
 	"github.com/nsqio/go-nsq"
+	"net/http"
+	"io/ioutil"
+	"strings"
 )
 
 type DataStorer interface {
@@ -60,6 +63,7 @@ type Config struct {
 	TablePrefixe  string //*前缀无_
 	ESHost        string
 	GType         string //数据源类型，淘宝，京东
+	GeoHost       string
 }
 
 func ParseConfig() (cg Config) {
@@ -77,6 +81,25 @@ func ParseConfig() (cg Config) {
 	flag.StringVar(&cg.TablePrefixe, "table_prefixe", "zhejiang_", "表前缀")
 	flag.StringVar(&cg.ESHost, "es-host", "http://192.168.1.218:9200", "es地址多个，按逗号隔开")
 	flag.StringVar(&cg.GType, "gtype", "taobao", "类型：taobao,jd")
+	flag.StringVar(&cg.GeoHost, "geo-host", "http://127.0.0.1:54321", "经纬度转换地址")
 	flag.Parse()
 	return
+}
+
+func GetLonLat(ad string,host string) string {
+	r, err := http.Get(fmt.Sprintf("%s/?ad=%s", host, ad))
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+
+	if r != nil && r.Body != nil {
+		defer r.Body.Close()
+		v, _ := ioutil.ReadAll(r.Body)
+		vs := strings.Split(string(v), ",")
+		if len(vs) == 2 {
+			return vs[1] + "," + vs[0]
+		}
+	}
+	return ""
 }

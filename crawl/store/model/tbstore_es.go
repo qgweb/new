@@ -13,10 +13,11 @@ import (
 )
 
 type TaobaoESStore struct {
-	client *elastic.Client
-	store  *mongodb.Mongodb
-	catMap map[string]string
-	prefix string
+	client  *elastic.Client
+	store   *mongodb.Mongodb
+	catMap  map[string]string
+	prefix  string
+	geohost string
 }
 
 func NewTaobaoESStore(c Config) *TaobaoESStore {
@@ -40,6 +41,7 @@ func NewTaobaoESStore(c Config) *TaobaoESStore {
 	}
 	esstor.prefix = c.TablePrefixe
 	esstor.initCategory()
+	esstor.geohost = c.GeoHost
 	return esstor
 }
 
@@ -127,6 +129,52 @@ func (this *TaobaoESStore) saveShopTrace(cd *CombinationData) {
 	}
 }
 
+func (this *TaobaoESStore) getTagNames(goods []Goods) []string {
+	var tns = make([]string, 0, len(goods))
+	for _, g := range goods {
+		if v, ok := this.catMap[g.Tagid]; ok {
+			if strings.TrimSpace(v) != "" {
+				tns = append(tns, v)
+			}
+		}
+	}
+	return tns
+}
+
+func (this *TaobaoESStore) getBrands(goods []Goods) []string {
+	var tns = make([]string, 0, len(goods))
+	for _, g := range goods {
+		if strings.TrimSpace(g.Brand) != "" {
+			tns = append(tns, g.Brand)
+		}
+	}
+	return tns
+}
+
+func (this *TaobaoESStore) pushTagToMap(cd *CombinationData) {
+	var (
+		db1      = "map_trace"
+		db2      = "map_trace_search"
+		table    = "map"
+		date     = timestamp.GetTimestamp(fmt.Sprintf("%s %s:%s:%s", cd.Date, cd.Clock, "00", "00"))
+		id       = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
+		tagNames = this.getTagNames(cd.Ginfos)
+		brands   = this.getBrands(cd.Ginfos)
+	)
+
+	info := map[string]interface{}{
+		"ad":        cd.Ad,
+		"ua":        encrypt.DefaultBase64.Encode(cd.Ua),
+		"timestamp": date,
+		"tb_tags":   tagNames,
+		"tb_brand":  brands,
+		"geo":       GetLonLat(cd.Ad, this.geohost),
+	}
+
+	this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+}
+
 func (this *TaobaoESStore) ParseData(data interface{}) interface{} {
 	cdata := &CombinationData{}
 	err := json.Unmarshal(data.([]byte), cdata)
@@ -149,4 +197,5 @@ func (this *TaobaoESStore) Save(info interface{}) {
 	this.saveGoods(cd.Ginfos)
 	this.saveAdTrace(cd)
 	this.saveShopTrace(cd)
+	this.pushTagToMap(cd)
 }

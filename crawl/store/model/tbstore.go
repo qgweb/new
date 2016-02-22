@@ -104,7 +104,7 @@ func (this *TaobaoMongoStore) saveGoods(gs []Goods) {
 			"tagname": tagName, "tagid": g.Tagid, "features": g.Features,
 			"attrbuites": g.Attrbuites, "sex": g.Sex, "people": g.People,
 			"shop_id": g.Shop_id, "shop_name": g.Shop_name, "shop_url": g.Shop_url,
-			"shop_box": g.Shop_boss, "count": g.Count}}
+			"shop_box": g.Shop_boss}}
 		this.store.Upsert(q)
 	}
 }

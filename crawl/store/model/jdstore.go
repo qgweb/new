@@ -43,6 +43,7 @@ func NewJDDataStore(c Config) *JDDataStore {
 type JDESStore struct {
 	client *elastic.Client
 	prefix string
+	geohost string
 }
 
 func NewJDESStore(c Config) *JDESStore {
@@ -55,6 +56,7 @@ func NewJDESStore(c Config) *JDESStore {
 	}
 
 	esstor.prefix = c.TablePrefixe
+	esstor.geohost = c.GeoHost
 	return esstor
 }
 
@@ -84,6 +86,51 @@ func (this *JDESStore) saveAdTrace(cd *CombinationJDData) {
 	}).Do())
 }
 
+func (this *JDESStore) getTagNames(goods []JDGoods) []string {
+	var tns = make([]string, 0, len(goods))
+	for _, g := range goods {
+		if strings.TrimSpace(g.Tagname) != "" {
+			tns = append(tns, g.Tagname)
+		}
+	}
+	return tns
+}
+
+
+func (this *JDESStore) getBrands(goods []JDGoods) []string {
+	var tns = make([]string, 0, len(goods))
+	for _, g := range goods {
+		if strings.TrimSpace(g.Brand) != "" {
+			tns = append(tns, g.Brand)
+		}
+	}
+	return tns
+}
+
+func (this *JDESStore) pushTagToMap(cd *CombinationJDData) {
+	var (
+		db1      = "map_trace"
+		db2      = "map_trace_search"
+		table    = "map"
+		date     = timestamp.GetTimestamp(fmt.Sprintf("%s %s:%s:%s", cd.Date, cd.Clock, "00", "00"))
+		id       = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
+		tagNames = this.getTagNames(cd.Ginfos)
+		brands   = this.getBrands(cd.Ginfos)
+	)
+
+	info := map[string]interface{}{
+		"ad":        cd.Ad,
+		"ua":        encrypt.DefaultBase64.Encode(cd.Ua),
+		"timestamp": date,
+		"jd_tags":   tagNames,
+		"jd_brand":  brands,
+		"geo" : GetLonLat(cd.Ad, this.geohost),
+	}
+
+	this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+}
+
 func (this *JDESStore) ParseData(data interface{}) interface{} {
 	cdata := &CombinationJDData{}
 	err := json.Unmarshal(data.([]byte), cdata)
@@ -105,4 +152,5 @@ func (this *JDESStore) Save(info interface{}) {
 	}
 	this.saveGoods(cd.Ginfos)
 	this.saveAdTrace(cd)
+	this.pushTagToMap(cd)
 }
