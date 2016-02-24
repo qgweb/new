@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/encrypt"
-	"github.com/qgweb/new/lib/timestamp"
+	//"github.com/qgweb/new/lib/timestamp"
 	"gopkg.in/olivere/elastic.v3"
 	"io"
 	"io/ioutil"
@@ -86,6 +86,7 @@ func BulkInsertData(reader *bufio.Reader, ktype string) {
 			break
 		}
 		info := strings.Split(line, "\t#\t")
+		log.Info(len(info))
 		if len(info) != 2 {
 			continue
 		}
@@ -96,7 +97,7 @@ func BulkInsertData(reader *bufio.Reader, ktype string) {
 			continue
 		}
 		num++
-		id := encrypt.DefaultMd5.Encode(timestamp.GetHourTimestamp(-1) + ad + ua)
+		id := encrypt.DefaultMd5.Encode("1456185600" + ad + ua)
 		pinfo := map[string]interface{}{
 			"ad":  ad,
 			"ua":  ua,
@@ -109,7 +110,7 @@ func BulkInsertData(reader *bufio.Reader, ktype string) {
 			log.Error(bk.Do())
 		}
 	}
-	bk.Do()
+	log.Info(bk.Do())
 }
 
 func main() {

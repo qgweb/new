@@ -323,3 +323,17 @@
 }
 
  */
+
+/data/qgbin/tags/store -mdb-put-host 192.168.0.92 \
+-mdb-put-port 10003  \
+-mdb-store-host 192.168.0.68  \
+-mdb-store-port 10003  \
+-nsq-host 192.168.0.72  \
+-nsq-port 4150  \
+-rKey zhejiang_goodsqueue \
+-table_prefixe zhejiang  \
+-mdb-store-uname xu  \
+-mdb-store-upwd xu123net \
+-es-host http://122.225.98.68:9201,http://122.225.98.71:9201 \
+-geo-host http://192.168.0.87:40001 \
+-gtype taobao

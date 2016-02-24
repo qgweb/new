@@ -8,6 +8,8 @@ func main() {
 	switch config.GType {
 	case "taobao":
 		ds = model.NewTaoBaoDataStore(config)
+	case "taobao_es":
+		ds = model.NewTaoBaoEsDataStore(config)
 	case "jd" :
 		ds = model.NewJDDataStore(config)
 	}

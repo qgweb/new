@@ -153,4 +153,10 @@ func (this *NSQDataStream) Save(data []byte) {
 	if err != nil {
 		log.Warn("推送数据失败,错误信息为:", err)
 	}
+
+	//数据冗余处理（临时）
+	err = this.nsqproducer.Publish(this.config.SendKey + "_es", data)
+	if err != nil {
+		log.Warn("推送数据失败,错误信息为:", err)
+	}
 }

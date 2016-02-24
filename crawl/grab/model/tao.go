@@ -68,6 +68,8 @@ LABEL:
 			break
 		}
 	}
+	//品牌
+	brand := grab.GetBrand(attrbuites)
 
 	// 店铺信息
 	shopId := grab.GetShopId(p)
@@ -87,5 +89,6 @@ LABEL:
 		"attrbuites": attrbuites,
 		"sex":        sex,
 		"people":     people,
+		"brand":      brand,
 	}
 }

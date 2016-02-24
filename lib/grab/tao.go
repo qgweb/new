@@ -13,16 +13,16 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"golang.org/x/net/html/charset"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/henrylee2cn/surfer/agent"
 	"github.com/ngaut/log"
+	"golang.org/x/net/html/charset"
 	"sync"
 )
 
 var (
 	client *http.Client
-	mux sync.Mutex
+	mux    sync.Mutex
 )
 
 func init() {
@@ -144,6 +144,17 @@ func GetAttrbuites(p *goquery.Document) string {
 	}
 
 	return strings.Join(attribute, "##")
+}
+
+// 获取淘宝品牌
+func GetBrand(h string) string {
+	for _, v := range strings.Split(h, "##") {
+		bs := strings.Split(v, ":")
+		if len(bs) == 2 && strings.TrimSpace(bs[0]) == "品牌" {
+			return strings.TrimSpace(bs[1])
+		}
+	}
+	return ""
 }
 
 //获取分类ID

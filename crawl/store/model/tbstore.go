@@ -209,7 +209,12 @@ type TaoBaoDataStore struct {
 
 func NewTaoBaoDataStore(c Config) *TaoBaoDataStore {
 	tbs := &TaoBaoDataStore{}
-	//tbs.DataStore.sr = NewTaobaoMongoStore(c)
+	tbs.DataStore.sr = NewTaobaoMongoStore(c)
+	return tbs
+}
+
+func NewTaoBaoEsDataStore(c Config) *TaoBaoDataStore {
+	tbs := &TaoBaoDataStore{}
 	tbs.DataStore.sr = NewTaobaoESStore(c)
 	return tbs
 }
