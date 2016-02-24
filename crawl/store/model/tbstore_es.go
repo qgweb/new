@@ -101,7 +101,7 @@ func (this *TaobaoESStore) saveShopTrace(cd *CombinationData) {
 		log.Error(err)
 	}
 
-	if res == nil {
+	if res == nil || res.TotalHits() == 0 {
 		log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
 			"ad":        cd.Ad,
 			"ua":        cd.Ua,
@@ -160,6 +160,7 @@ func (this *TaobaoESStore) pushTagToMap(cd *CombinationData) {
 		id       = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
 		tagNames = this.getTagNames(cd.Ginfos)
 		brands   = this.getBrands(cd.Ginfos)
+		geo      = GetLonLat(cd.Ad, this.geohost)
 	)
 
 	info := map[string]interface{}{
@@ -168,11 +169,13 @@ func (this *TaobaoESStore) pushTagToMap(cd *CombinationData) {
 		"timestamp": date,
 		"tb_tags":   tagNames,
 		"tb_brand":  brands,
-		"geo":       GetLonLat(cd.Ad, this.geohost),
+		"geo":       geo,
 	}
 
-	this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
-	this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	if geo != "" {
+		this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	}
 }
 
 func (this *TaobaoESStore) ParseData(data interface{}) interface{} {

@@ -41,8 +41,8 @@ func NewJDDataStore(c Config) *JDDataStore {
 }
 
 type JDESStore struct {
-	client *elastic.Client
-	prefix string
+	client  *elastic.Client
+	prefix  string
 	geohost string
 }
 
@@ -96,7 +96,6 @@ func (this *JDESStore) getTagNames(goods []JDGoods) []string {
 	return tns
 }
 
-
 func (this *JDESStore) getBrands(goods []JDGoods) []string {
 	var tns = make([]string, 0, len(goods))
 	for _, g := range goods {
@@ -116,6 +115,7 @@ func (this *JDESStore) pushTagToMap(cd *CombinationJDData) {
 		id       = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
 		tagNames = this.getTagNames(cd.Ginfos)
 		brands   = this.getBrands(cd.Ginfos)
+		geo      = GetLonLat(cd.Ad, this.geohost)
 	)
 
 	info := map[string]interface{}{
@@ -124,11 +124,13 @@ func (this *JDESStore) pushTagToMap(cd *CombinationJDData) {
 		"timestamp": date,
 		"jd_tags":   tagNames,
 		"jd_brand":  brands,
-		"geo" : GetLonLat(cd.Ad, this.geohost),
+		"geo":       geo,
 	}
 
-	this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
-	this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	if geo != "" {
+		this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+	}
 }
 
 func (this *JDESStore) ParseData(data interface{}) interface{} {
