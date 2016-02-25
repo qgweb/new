@@ -42,6 +42,7 @@ func NewJDDataStore(c Config) *JDDataStore {
 
 type JDESStore struct {
 	client  *elastic.Client
+	bulk    *elastic.BulkService
 	prefix  string
 	geohost string
 }
@@ -57,6 +58,7 @@ func NewJDESStore(c Config) *JDESStore {
 
 	esstor.prefix = c.TablePrefixe
 	esstor.geohost = c.GeoHost
+	esstor.bulk = esstor.client.Bulk()
 	return esstor
 }
 
@@ -64,7 +66,8 @@ func (this *JDESStore) saveGoods(gs []JDGoods) {
 	var db = "jd_goods"
 	var table = "goods"
 	for _, g := range gs {
-		this.client.Index().Index(db).Type(table).Id(g.Gid).BodyJson(g).Do()
+		//this.client.Index().Index(db).Type(table).Id(g.Gid).BodyJson(g).Do()
+		this.bulk.Add(elastic.NewBulkIndexRequest().Index(db).Type(table).Id(g.Gid).Doc(g))
 	}
 }
 
@@ -78,12 +81,18 @@ func (this *JDESStore) saveAdTrace(cd *CombinationJDData) {
 	for _, v := range cd.Ginfos {
 		cids = append(cids, v.Tagid)
 	}
-	log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
+	//log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
+	//	"ad":        cd.Ad,
+	//	"ua":        cd.Ua,
+	//	"timestamp": date,
+	//	"cids":      cids,
+	//}).Do())
+	this.bulk.Add(elastic.NewBulkIndexRequest().Index(db).Type(table).Id(id).Doc(map[string]interface{}{
 		"ad":        cd.Ad,
 		"ua":        cd.Ua,
 		"timestamp": date,
 		"cids":      cids,
-	}).Do())
+	}))
 }
 
 func (this *JDESStore) getTagNames(goods []JDGoods) []string {
@@ -128,8 +137,10 @@ func (this *JDESStore) pushTagToMap(cd *CombinationJDData) {
 	}
 
 	if geo != "" {
-		this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
-		this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		//this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		//this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		this.bulk.Add(elastic.NewBulkUpdateRequest().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true))
+		this.bulk.Add(elastic.NewBulkUpdateRequest().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true))
 	}
 }
 
@@ -155,4 +166,7 @@ func (this *JDESStore) Save(info interface{}) {
 	this.saveGoods(cd.Ginfos)
 	this.saveAdTrace(cd)
 	this.pushTagToMap(cd)
+	if this.bulk.NumberOfActions()%100 == 0 {
+		log.Info(this.bulk.Do())
+	}
 }

@@ -14,6 +14,7 @@ import (
 
 type TaobaoESStore struct {
 	client  *elastic.Client
+	bulk    *elastic.BulkService
 	store   *mongodb.Mongodb
 	catMap  map[string]string
 	prefix  string
@@ -42,6 +43,7 @@ func NewTaobaoESStore(c Config) *TaobaoESStore {
 	esstor.prefix = c.TablePrefixe
 	esstor.initCategory()
 	esstor.geohost = c.GeoHost
+	esstor.bulk = esstor.client.Bulk()
 	return esstor
 }
 
@@ -63,7 +65,8 @@ func (this *TaobaoESStore) saveGoods(gs []Goods) {
 		if v, ok := this.catMap[g.Tagid]; ok {
 			g.Tagname = v
 		}
-		this.client.Index().Index(db).Type(table).Id(g.Gid).BodyJson(g).Do()
+		//this.client.Index().Index(db).Type(table).Id(g.Gid).BodyJson(g).Do()
+		this.bulk.Add(elastic.NewBulkIndexRequest().Index(db).Type(table).Id(g.Gid).Doc(g))
 	}
 }
 
@@ -77,12 +80,19 @@ func (this *TaobaoESStore) saveAdTrace(cd *CombinationData) {
 	for _, v := range cd.Ginfos {
 		cids = append(cids, v.Tagid)
 	}
-	log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
+
+	//log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
+	//	"ad":        cd.Ad,
+	//	"ua":        cd.Ua,
+	//	"timestamp": date,
+	//	"cids":      cids,
+	//}).Do())
+	this.bulk.Add(elastic.NewBulkIndexRequest().Index(db).Type(table).Id(id).Doc(map[string]interface{}{
 		"ad":        cd.Ad,
 		"ua":        cd.Ua,
 		"timestamp": date,
 		"cids":      cids,
-	}).Do())
+	}))
 }
 
 func (this *TaobaoESStore) saveShopTrace(cd *CombinationData) {
@@ -102,12 +112,19 @@ func (this *TaobaoESStore) saveShopTrace(cd *CombinationData) {
 	}
 
 	if res == nil || res.TotalHits() == 0 {
-		log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
-			"ad":        cd.Ad,
-			"ua":        cd.Ua,
-			"timestamp": date,
-			"shop":      shopids,
-		}).Do())
+		//log.Info(this.client.Index().Index(db).Type(table).Id(id).BodyJson(map[string]interface{}{
+		//	"ad":        cd.Ad,
+		//	"ua":        cd.Ua,
+		//	"timestamp": date,
+		//	"shop":      shopids,
+		//}).Do())
+		this.bulk.Add(elastic.NewBulkIndexRequest().Index(db).Type(table).Id(id).Doc(
+			map[string]interface{}{
+				"ad":        cd.Ad,
+				"ua":        cd.Ua,
+				"timestamp": date,
+				"shop":      shopids,
+			}))
 	} else {
 		oshopids := res.Hits.Hits[0].Fields["shop"].([]interface{})
 		var tmpMap = make(map[string]byte)
@@ -123,9 +140,12 @@ func (this *TaobaoESStore) saveShopTrace(cd *CombinationData) {
 			nshopids = append(nshopids, k)
 		}
 
-		log.Info(this.client.Update().Index(db).Type(table).Doc(map[string]interface{}{
+		//log.Info(this.client.Update().Index(db).Type(table).Doc(map[string]interface{}{
+		//	"shop": nshopids,
+		//}).Id(id).Do())
+		this.bulk.Add(elastic.NewBulkUpdateRequest().Index(db).Type(table).Doc(map[string]interface{}{
 			"shop": nshopids,
-		}).Id(id).Do())
+		}).Id(id))
 	}
 }
 
@@ -173,8 +193,10 @@ func (this *TaobaoESStore) pushTagToMap(cd *CombinationData) {
 	}
 
 	if geo != "" {
-		this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
-		this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		//this.client.Update().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		//this.client.Update().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true).Do()
+		this.bulk.Add(elastic.NewBulkUpdateRequest().Index(db1).Type(table).Id(id).Doc(info).DocAsUpsert(true))
+		this.bulk.Add(elastic.NewBulkUpdateRequest().Index(db2).Type(table).Id(id).Doc(info).DocAsUpsert(true))
 	}
 }
 
@@ -201,4 +223,7 @@ func (this *TaobaoESStore) Save(info interface{}) {
 	this.saveAdTrace(cd)
 	this.saveShopTrace(cd)
 	this.pushTagToMap(cd)
+	if this.bulk.NumberOfActions()%100 == 0 {
+		log.Info(this.bulk.Do())
+	}
 }

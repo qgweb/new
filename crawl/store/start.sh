@@ -1,7 +1,7 @@
 ./store \
 -es-host  http://192.168.1.218:9200,http://192.168.1.218:9201 \
 -geo-host  http://127.0.0.1:54321 \
--gtype  taobao \
+-gtype  taobao_es \
 -hbase-host  192.168.1.218 \
 -hbase-port  2181 \
 -mdb-put-host  192.168.1.199 \
