@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ var (
 	httphost = flag.String("host", "127.0.0.1", "http地址")
 	httpport = flag.String("port", "3344", "http端口")
 	dbpath   = flag.String("path", "/tmp/", "数据存储地址")
+	mux      = sync.Mutex{}
 )
 
 func init() {
@@ -26,6 +28,8 @@ func init() {
 }
 
 func recv(w http.ResponseWriter, r *http.Request) {
+	mux.Lock()
+	defer mux.Unlock()
 	r.ParseMultipartForm(32 << 20)
 	file, handler, err := r.FormFile("name")
 	if err != nil {
@@ -35,7 +39,7 @@ func recv(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	f, err := os.OpenFile(*dbpath+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(*dbpath+"/"+handler.Filename, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
