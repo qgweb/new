@@ -188,9 +188,16 @@ func (this *DispathWriter) RM() (mp map[string]int) {
 //	fmt.Println("adua", ad, ua, aid)
 //	})
 //
+//  kf.Origin(func (info dbfactory.AdUaAdverts) {
+//	fmt.Println(info)
+//	})
+//
+//	kf.Filter(func (info dbfactory.AdUaAdverts) bool {
+//		return true
+//	})
 //	kf.IDAdUaSet("advert_2016_", func(m map[string]int) {
 //	fmt.Println(m)
-//	})
+//	},true)
 
 // 第一个参数输出， 第二个完成时写入值
 type ReadFun func(chan interface{}, chan int8)
