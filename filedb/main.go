@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	EXPIRETIME = 86400
+	EXPIRETIME = 86400 * 3
 )
 
 var (
@@ -80,7 +80,7 @@ func clean() {
 	for _, v := range fs {
 		if time.Since(v.ModTime()).Seconds() > EXPIRETIME {
 			fmt.Println(v.Name())
-			//os.Remove(*dbpath + "/" + v.Name())
+			os.Remove(*dbpath + "/" + v.Name())
 		}
 	}
 }
@@ -88,7 +88,7 @@ func clean() {
 func crontab() {
 	c := cron.New()
 	c.Start()
-	c.AddFunc("*/5 * * * * *", clean)
+	c.AddFunc("* */1 * * * *", clean)
 }
 
 func main() {
