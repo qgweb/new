@@ -204,7 +204,7 @@ type ReadFun func(chan interface{}, chan int8)
 type AdFun func(string)
 type AdUaIdsFun func(string, string, map[string]int8)
 type OriginFun func(AdUaAdverts)
-type FilterFun func(AdUaAdverts) bool
+type FilterFun func(AdUaAdverts) (string, bool)
 
 type AdUaAdverts struct {
 	Ad  string
@@ -398,8 +398,9 @@ func (this *KVFile) Filter(fun FilterFun) error {
 		for _, id := range strings.Split(infos[2], ",") {
 			ad.AId[id] = 1
 		}
-		if fun(ad) {
-			nf.WriteString(line)
+
+		if nl, ok := fun(ad); ok {
+			nf.WriteString(nl + "\n")
 		}
 	}
 	os.Remove(this.fname)

@@ -155,6 +155,12 @@ func (this *DispathWriter) WC() (mp map[string]int) {
 	return
 }
 
+func (this *DispathWriter) Clean() {
+	for _, w := range this.writers {
+		os.Remove(w.fname))
+	}
+}
+
 // ===========================================================
 //  内容之间用\t分割
 //	kf := common.NewKVFile("./xxx.txt")
