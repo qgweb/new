@@ -50,6 +50,10 @@ func (this *MemCache) Expire(key string, seconds int) {
 	this.db.Send("EXPIRE", key, seconds)
 }
 
+func (this *MemCache) Auth(pwd string) {
+	this.db.Do("Auth", pwd)
+}
+
 func (this *MemCache) Set(key string, val string) {
 	this.db.Send("SET", key, val)
 }

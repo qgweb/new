@@ -117,7 +117,7 @@ func (this *JsPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("jiangsu_put", "url_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "js_url_"+timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
@@ -137,7 +137,7 @@ func (this *JsPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , other_1461016800, 11111
-		lib.StatisticsData("jiangsu_put", "other_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "js_other_"+timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
@@ -159,7 +159,7 @@ func (this *JsPut) tagDataStats() {
 		for k, v := range info {
 			tagid := strings.TrimPrefix(k, fname)
 			// 标签统计数据 tags_stats , url_1461016800, 11111
-			lib.StatisticsData("tags_stats", "js_"+tagid+"_"+timestamp.GetHourTimestamp(-1),
+			lib.StatisticsData("tags_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_"+tagid,
 				convert.ToString(v), "incr")
 		}
 	}, true)
@@ -225,7 +225,7 @@ func (this *JsPut) saveTraceToPutSys() {
 	rdb.Flush()
 	rdb.Close()
 	// 广告数量统计数据 put_stats , js_1461016800, 11111
-	lib.StatisticsData("dx_stats", fmt.Sprintf("js_%s", timestamp.GetHourTimestamp(-1)),
+	lib.StatisticsData("put_stats", fmt.Sprintf("js_%s", timestamp.GetHourTimestamp(-1)),
 		convert.ToString(adcount), "")
 }
 

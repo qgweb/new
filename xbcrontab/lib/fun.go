@@ -109,3 +109,12 @@ func GetRedisObj() (*rediscache.MemCache, error) {
 	conf.Port = rurls[1]
 	return rediscache.New(conf)
 }
+
+// 获取redis对象
+func GetZJDxRedisObj() (*rediscache.MemCache, error) {
+	rurls := strings.Split(GetConfVal("zhejiang::dx_redis_url"), ":")
+	conf := rediscache.MemConfig{}
+	conf.Host = rurls[0]
+	conf.Port = rurls[1]
+	return rediscache.New(conf)
+}
