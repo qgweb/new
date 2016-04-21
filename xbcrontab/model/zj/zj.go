@@ -448,8 +448,8 @@ func (this *ZjPut) saveTraceToDianxin() {
 
 func (this *ZjPut) Run() {
 	this.kf.AddFun(this.domainData)
-	//this.kf.AddFun(this.otherData)
-	//this.kf.AddFun(this.BusinessData)
+	this.kf.AddFun(this.otherData)
+	this.kf.AddFun(this.BusinessData)
 	this.kf.WriteFile()              //合成数据
 	this.tagDataStats()              //标签统计
 	this.filterData()                //过滤数据,生成ad，ua对应广告id
