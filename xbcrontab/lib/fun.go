@@ -130,3 +130,18 @@ func GetMongoObj() (*mongodb.Mongodb, error) {
 	conf.Db = "data_source"
 	return mongodb.NewMongodb(conf)
 }
+
+// 数据添加前缀
+func AddPrefix(val string, pre string) string {
+	var list = strings.Split(val, "\t");
+	if len(list) != 3 {
+		return ""
+	}
+	list[2] = pre + strings.Join(strings.Split(list[2], ","), "," + pre)
+	return strings.Join(list,"\t")
+}
+
+// 是否是mongoid
+func IsMongo(val string) bool {
+	return mongodb.IsObjectId(val)
+}

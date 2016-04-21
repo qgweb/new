@@ -38,8 +38,8 @@ func NewJsPut() *JsPut {
 	jp.putTags = make(map[string]map[string]int)
 	jp.initArea()
 	jp.initPutAdverts()
-	jp.initPutTags("TAGS_3*")
-	jp.initPutTags("TAGS_5*")
+	jp.initPutTags("TAGS_3*", "tb_", "mg_")
+	jp.initPutTags("TAGS_5*", "url_", "")
 	return jp
 }
 
@@ -94,14 +94,19 @@ func (this *JsPut) initPutAdverts() {
 }
 
 // 初始化投放标签
-func (this *JsPut) initPutTags(tagkey string) {
+func (this *JsPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	rdb, err := lib.GetRedisObj()
 	if err != nil {
 		log.Fatal(err)
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
+		if lib.IsMongo(rkey) {
+			rkey = prefix2 + rkey
+		} else {
+			rkey = prefix1 + rkey
+		}
 		if _, ok := this.putTags[rkey]; !ok {
 			this.putTags[rkey] = make(map[string]int)
 		}
@@ -124,8 +129,10 @@ func (this *JsPut) domainData(out chan interface{}, in chan int8) {
 
 	fname := "jiangsu_url_" + timestamp.GetHourTimestamp(-1) + ".txt"
 	if err := lib.GetFdbData(fname, func(val string) {
-		datacount++
-		out <- val
+		if v := lib.AddPrefix(val, "url_"); v != "" {
+			datacount++
+			out <- v
+		}
 	}); err != nil {
 		in <- 1
 		return
@@ -144,8 +151,10 @@ func (this *JsPut) otherData(out chan interface{}, in chan int8) {
 
 	fname := "jiangsu_other_" + timestamp.GetHourTimestamp(-1) + ".txt"
 	if err := lib.GetFdbData(fname, func(val string) {
-		datacount++
-		out <- val
+		if v := lib.AddPrefix(val, "mg_"); v != "" {
+			datacount++
+			out <- v
+		}
 	}); err != nil {
 		in <- 1
 		return
@@ -159,8 +168,9 @@ func (this *JsPut) tagDataStats() {
 	this.kf.IDAdUaSet(fname, func(info map[string]int) {
 		for k, v := range info {
 			tagid := strings.TrimPrefix(k, fname)
+			tagids := strings.Split(tagid, "_")
 			// 标签统计数据 tags_stats , url_1461016800, 11111
-			lib.StatisticsData("tags_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_"+tagid,
+			lib.StatisticsData("tags_stats", fmt.Sprintf("js_%s_%s_%s", tagids[0], timestamp.GetHourTimestamp(-1), tagids[1]),
 				convert.ToString(v), "incr")
 		}
 	}, true)

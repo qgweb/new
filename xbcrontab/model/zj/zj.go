@@ -37,8 +37,8 @@ func NewZjPut() *ZjPut {
 	zj.putTags = make(map[string]map[string]int)
 	zj.shopAdverts = make(map[string]ShopInfo)
 	zj.initPutAdverts()
-	zj.initPutTags("TAGS_3*")
-	zj.initPutTags("TAGS_5*")
+	zj.initPutTags("TAGS_3*", "tb_", "mg_")
+	zj.initPutTags("TAGS_5*", "url_", "")
 	return zj
 }
 
@@ -78,14 +78,19 @@ func (this *ZjPut) initPutAdverts() {
 }
 
 // 初始化投放标签
-func (this *ZjPut) initPutTags(tagkey string) {
+func (this *ZjPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	rdb, err := lib.GetRedisObj()
 	if err != nil {
 		log.Fatal(err)
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
+		if lib.IsMongo(rkey) {
+			rkey = prefix2 + rkey
+		} else {
+			rkey = prefix1 + rkey
+		}
 		if _, ok := this.putTags[rkey]; !ok {
 			this.putTags[rkey] = make(map[string]int)
 		}
@@ -102,14 +107,16 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_url_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_url_" + timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
 	fname := "zhejiang_url_" + timestamp.GetHourTimestamp(-1) + ".txt"
 	if err := lib.GetFdbData(fname, func(val string) {
-		datacount++
-		out <- val
+		if v := lib.AddPrefix(val, "url_"); v != "" {
+			datacount++
+			out <- v
+		}
 	}); err != nil {
 		in <- 1
 		return
@@ -122,14 +129,16 @@ func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_other_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_other_" + timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
 	fname := "zhejiang_other_" + timestamp.GetHourTimestamp(-1) + ".txt"
 	if err := lib.GetFdbData(fname, func(val string) {
-		datacount++
-		out <- val
+		if v := lib.AddPrefix(val, "mg_"); v != "" {
+			datacount++
+			out <- v
+		}
 	}); err != nil {
 		in <- 1
 		return
@@ -142,7 +151,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_business_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_business_" + timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
@@ -165,7 +174,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 	sid = res.ScrollId
 	for {
 		sres, err := es.Scroll().Index("zhejiang_tb_ad_trace").Type("ad").
-			Query(query).ScrollId(sid).Size(1000).Do()
+		Query(query).ScrollId(sid).Size(1000).Do()
 		if err == elastic.EOS {
 			break
 		}
@@ -192,7 +201,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 				}
 			}
 			for k, _ := range ncids {
-				ncidsary = append(ncidsary, k)
+				ncidsary = append(ncidsary, "tb_" + k)
 			}
 			if len(ncidsary) == 0 {
 				continue
@@ -249,7 +258,7 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_shop_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_shop_" + timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 
@@ -270,7 +279,7 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 			query.Must(elastic.NewTermQuery("shop", shopid))
 
 			sr, err := es.Scroll().Index("zhejiang_tb_shop_trace").Type("shop").
-				Query(query).Do()
+			Query(query).Do()
 			if err != nil {
 				log.Error(err)
 				continue
@@ -278,7 +287,7 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 			scrollid = sr.ScrollId
 			for {
 				sres, err := es.Scroll().Index("zhejiang_tb_shop_trace").Type("shop").
-					Query(query).ScrollId(scrollid).Size(1000).Do()
+				Query(query).ScrollId(scrollid).Size(1000).Do()
 
 				if err == elastic.EOS {
 					break
@@ -313,7 +322,7 @@ func (this *ZjPut) VisitorData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_visitor_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_visitor_" + timestamp.GetHourTimestamp(-1),
 			convert.ToString(datacount), "")
 	}()
 	m, err := lib.GetMongoObj()
@@ -344,8 +353,9 @@ func (this *ZjPut) tagDataStats() {
 	this.kf.IDAdUaSet(fname, func(info map[string]int) {
 		for k, v := range info {
 			tagid := strings.TrimPrefix(k, fname)
+			tagids := strings.Split(tagid, "_")
 			// 标签统计数据 tags_stats , url_1461016800, 11111
-			lib.StatisticsData("tags_stats", "zj_"+timestamp.GetHourTimestamp(-1)+"_"+tagid,
+			lib.StatisticsData("tags_stats", fmt.Sprintf("zj_%s_%s_%s", tagids[0], timestamp.GetHourTimestamp(-1), tagids[1]),
 				convert.ToString(v), "incr")
 		}
 	}, true)
@@ -404,7 +414,7 @@ func (this *ZjPut) saveTraceToPutSys() {
 			key = encrypt.DefaultMd5.Encode(ad + "_" + ua)
 		}
 		for aid, _ := range aids {
-			rdb.HSet(key, "advert:"+aid, aid)
+			rdb.HSet(key, "advert:" + aid, aid)
 		}
 		rdb.Expire(key, 5400)
 		adcount++
@@ -419,8 +429,8 @@ func (this *ZjPut) saveTraceToPutSys() {
 // 保存投放轨迹到电信ftp
 func (this *ZjPut) saveTraceToDianxin() {
 	var (
-		db      = lib.GetConfVal("zhejiang::dx_redis_db")
-		pwd     = lib.GetConfVal("zhejiang::dx_redis_pwd")
+		db = lib.GetConfVal("zhejiang::dx_redis_db")
+		pwd = lib.GetConfVal("zhejiang::dx_redis_pwd")
 		adcount = 0
 	)
 
