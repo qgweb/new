@@ -2,9 +2,6 @@ package lib
 
 import (
 	"bufio"
-	"github.com/qgweb/new/lib/config"
-	"github.com/qgweb/new/lib/rediscache"
-	"gopkg.in/olivere/elastic.v3"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +11,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/qgweb/new/lib/config"
+	"github.com/qgweb/new/lib/mongodb"
+	"github.com/qgweb/new/lib/rediscache"
+	"gopkg.in/olivere/elastic.v3"
 )
 
 var (
@@ -117,4 +119,14 @@ func GetZJDxRedisObj() (*rediscache.MemCache, error) {
 	conf.Host = rurls[0]
 	conf.Port = rurls[1]
 	return rediscache.New(conf)
+}
+
+// 获取mongo对象
+func GetMongoObj() (*mongodb.Mongodb, error) {
+	murls := strings.Split(GetConfVal("zhejiang::mongo_url"), ":")
+	conf := mongodb.MongodbConf{}
+	conf.Host = murls[0]
+	conf.Port = murls[1]
+	conf.Db = "data_source"
+	return mongodb.NewMongodb(conf)
 }

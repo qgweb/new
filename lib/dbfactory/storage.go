@@ -2,14 +2,15 @@ package dbfactory
 
 import (
 	"bufio"
-	"github.com/ngaut/log"
-	"github.com/qgweb/new/lib/convert"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/ngaut/log"
+	"github.com/qgweb/new/lib/convert"
 )
 
 //  例子
@@ -205,6 +206,7 @@ type AdFun func(string)
 type AdUaIdsFun func(string, string, map[string]int8)
 type OriginFun func(AdUaAdverts)
 type FilterFun func(AdUaAdverts) (string, bool)
+type AppendFun func(chan interface{}, chan int8)
 
 type AdUaAdverts struct {
 	Ad  string
@@ -364,7 +366,35 @@ func (this *KVFile) Origin(fun OriginFun) error {
 	return nil
 }
 
-// 原始数据
+// 追加数据
+func (this *KVFile) Append(fun AppendFun) error {
+	f, err := os.OpenFile(this.fname, os.O_APPEND|os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	rchan := make(chan interface{})
+	ochan := make(chan int8)
+	go fun(rchan, ochan)
+
+	for {
+		select {
+		case v, ok := <-rchan:
+			if ok {
+				f.WriteString(v.(string) + "\n")
+			}
+		case _, ok := <-ochan:
+			if ok {
+				goto END
+			}
+		}
+	}
+END:
+	this.sortuniqm()
+	return nil
+}
+
+// 过滤数据
 func (this *KVFile) Filter(fun FilterFun) error {
 	nfname := this.fname + ".bakbakbak"
 	f, err := os.Open(this.fname)

@@ -3,18 +3,19 @@ package js
 import (
 	"bufio"
 	"fmt"
-	"github.com/codegangsta/cli"
-	"github.com/ngaut/log"
-	"github.com/qgweb/gopro/lib/encrypt"
-	"github.com/qgweb/new/lib/dbfactory"
-	"github.com/qgweb/new/lib/timestamp"
-	"github.com/qgweb/new/xbcrontab/lib"
 	"goclass/convert"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/codegangsta/cli"
+	"github.com/ngaut/log"
+	"github.com/qgweb/gopro/lib/encrypt"
+	"github.com/qgweb/new/lib/dbfactory"
+	"github.com/qgweb/new/lib/timestamp"
+	"github.com/qgweb/new/xbcrontab/lib"
 )
 
 func CliPutData() cli.Command {

@@ -2,6 +2,7 @@ package convert
 
 import (
 	"strconv"
+	"strings"
 )
 
 func ToString(d interface{}) (s string) {
@@ -31,6 +32,15 @@ func ToString(d interface{}) (s string) {
 		return string(d.([]byte))
 	case string:
 		s = d.(string)
+		return
+	case []interface{}:
+		ss := make([]string, 0, 10)
+		for _, v := range d.([]interface{}) {
+			if vv, ok := v.(string); ok {
+				ss = append(ss, vv)
+			}
+		}
+		s = strings.Join(ss, ",")
 		return
 	}
 	return ""
