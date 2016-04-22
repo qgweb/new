@@ -37,3 +37,8 @@ func GetMonthTimestamp(month int) string {
 	a, _ := time.ParseInLocation("200601", d, time.Local)
 	return convert.ToString(a.Unix())
 }
+
+// unix转日期
+func GetUnixFormat(unix string) string{
+	return time.Unix(convert.ToInt64(unix),0).Format("2006-01-02 15:04:05")
+}
