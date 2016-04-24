@@ -101,7 +101,7 @@ func (this *JsPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
 		if lib.IsMongo(rkey) {
 			rkey = prefix2 + rkey
 		} else {
@@ -123,7 +123,7 @@ func (this *JsPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "js_url_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_url",
 			convert.ToString(datacount), "")
 	}()
 
@@ -145,7 +145,7 @@ func (this *JsPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "js_other_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_other",
 			convert.ToString(datacount), "")
 	}()
 
@@ -170,7 +170,7 @@ func (this *JsPut) tagDataStats() {
 			tagid := strings.TrimPrefix(k, fname)
 			tagids := strings.Split(tagid, "_")
 			// 标签统计数据 tags_stats , url_1461016800, 11111
-			lib.StatisticsData("tags_stats", fmt.Sprintf("js_%s_%s_%s", tagids[0], timestamp.GetHourTimestamp(-1), tagids[1]),
+			lib.StatisticsData("tags_stats", fmt.Sprintf("js_%s_%s_%s", timestamp.GetHourTimestamp(-1), tagids[0], tagids[1]),
 				convert.ToString(v), "incr")
 		}
 	}, true)
