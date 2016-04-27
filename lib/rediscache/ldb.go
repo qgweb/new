@@ -9,7 +9,7 @@ import (
 type MemConfig struct {
 	Host string
 	Port string
-	Db string
+	Db   string
 }
 
 type MemCache struct {
@@ -114,6 +114,14 @@ func (this *MemCache) SMembers(key string) []string {
 		return res
 	}
 	return make([]string, 0)
+}
+
+func (this *MemCache) Sadd(key string, values interface{}) (int, error) {
+	return redis.Int(this.db.Do("SADD", key, values))
+}
+
+func (this *MemCache) Srem(key string, values interface{}) (int, error) {
+	return redis.Int(this.db.Do("SREM", key, values))
 }
 
 func (this *MemCache) Flush() {
