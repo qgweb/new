@@ -111,7 +111,7 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "zhejiang_url_" + timestamp.GetHourTimestamp(-1) + ".txt"
+	fname := "zhejiang_url_" + timestamp.GetHourTimestamp(-1)
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "url_"); v != "" {
 			datacount++
@@ -133,7 +133,7 @@ func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "zhejiang_other_" + timestamp.GetHourTimestamp(-1) + ".txt"
+	fname := "zhejiang_other_" + timestamp.GetHourTimestamp(-1)
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "mg_"); v != "" {
 			datacount++

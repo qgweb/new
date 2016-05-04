@@ -220,7 +220,7 @@ func (this *JsPut) saveTraceToPutSys() {
 		log.Error("redis连接失败", err)
 		return
 	}
-	rdb.SelectDb("4")
+	rdb.SelectDb("1")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad

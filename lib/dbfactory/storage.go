@@ -104,20 +104,20 @@ func (this *DispathWriter) uniq(fn string) {
 	consumer := exec.Command("uniq")
 
 	p, err := generator.StdoutPipe()
-	if err !=nil {
+	if err != nil {
 		log.Error(err)
 		return
 	}
 	generator.Start()
 	consumer.Stdin = p
 	pp, err := consumer.StdoutPipe()
-	if err !=nil {
+	if err != nil {
 		log.Error(err)
 		return
 	}
 	consumer.Start()
 	f, err := os.Create(fn + ".bak")
-	if err !=nil {
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -145,7 +145,7 @@ func (this *DispathWriter) flen(fn string) int {
 	return num
 }
 
-func (this *DispathWriter) Wait() {
+func (this *DispathWriter) Wait(isuniq bool) {
 	<-this.overChan
 	wg := sync.WaitGroup{}
 	for _, w := range this.writers {
@@ -154,7 +154,9 @@ func (this *DispathWriter) Wait() {
 		wg.Add(1)
 		go func(n string) {
 			defer wg.Done()
-			this.uniq(n)
+			if isuniq {
+				this.uniq(n)
+			}
 		}(w.fname)
 	}
 	wg.Wait()
@@ -552,7 +554,7 @@ func (this *KVFile) IDAdUaSet(prifix string, fun func(map[string]int), isdel boo
 		}
 	}
 	dw.CloseReadChan()
-	dw.Wait()
+	dw.Wait(false)
 	fun(dw.WC())
 	if isdel {
 		dw.RM()
