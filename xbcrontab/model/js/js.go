@@ -127,7 +127,7 @@ func (this *JsPut) domainData(out chan interface{}, in chan int8) {
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "jiangsu_url_" + timestamp.GetHourTimestamp(-1) + ".txt"
+	fname := "jiangsu_url_" + timestamp.GetHourTimestamp(-1)
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "url_"); v != "" {
 			datacount++
@@ -149,7 +149,7 @@ func (this *JsPut) otherData(out chan interface{}, in chan int8) {
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "jiangsu_other_" + timestamp.GetHourTimestamp(-1) + ".txt"
+	fname := "jiangsu_other_" + timestamp.GetHourTimestamp(-1)
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "mg_"); v != "" {
 			datacount++
@@ -220,7 +220,7 @@ func (this *JsPut) saveTraceToPutSys() {
 		log.Error("redis连接失败", err)
 		return
 	}
-	rdb.SelectDb("1")
+	rdb.SelectDb("4")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad

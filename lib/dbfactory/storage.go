@@ -103,12 +103,24 @@ func (this *DispathWriter) uniq(fn string) {
 	generator := exec.Command("sort", fn)
 	consumer := exec.Command("uniq")
 
-	p, _ := generator.StdoutPipe()
+	p, err := generator.StdoutPipe()
+	if err !=nil {
+		log.Error(err)
+		return
+	}
 	generator.Start()
 	consumer.Stdin = p
-	pp, _ := consumer.StdoutPipe()
+	pp, err := consumer.StdoutPipe()
+	if err !=nil {
+		log.Error(err)
+		return
+	}
 	consumer.Start()
-	f, _ := os.Create(fn + ".bak")
+	f, err := os.Create(fn + ".bak")
+	if err !=nil {
+		log.Error(err)
+		return
+	}
 	io.Copy(f, pp)
 	f.Close()
 	os.Rename(fn+".bak", fn)
