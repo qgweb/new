@@ -109,6 +109,10 @@ func (this *MemCache) SelectDb(db string) {
 	this.db.Do("SELECT", db)
 }
 
+func (this *MemCache) FlushDb() {
+	this.db.Do("FLUSHDB")
+}
+
 func (this *MemCache) SMembers(key string) []string {
 	if res, err := redis.Strings(this.db.Do("SMEMBERS", key)); err == nil {
 		return res

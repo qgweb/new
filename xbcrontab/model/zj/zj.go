@@ -36,6 +36,7 @@ func NewZjPut() *ZjPut {
 	zj.kf = dbfactory.NewKVFile(fmt.Sprintf("./%s.txt", convert.ToString(time.Now().Unix())))
 	zj.putTags = make(map[string]map[string]int)
 	zj.shopAdverts = make(map[string]ShopInfo)
+	zj.Timestamp = timestamp.GetHourTimestamp(-1)
 	zj.initPutAdverts()
 	zj.initPutTags("TAGS_3*", "tb_", "mg_")
 	zj.initPutTags("TAGS_5*", "url_", "")
@@ -48,6 +49,7 @@ type ZjPut struct {
 	putAdverts  map[string]int
 	putTags     map[string]map[string]int
 	shopAdverts map[string]ShopInfo
+	Timestamp string
 }
 
 // 店铺广告
@@ -107,11 +109,11 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+timestamp.GetHourTimestamp(-1)+"_url",
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_url",
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "zhejiang_url_" + timestamp.GetHourTimestamp(-1)
+	fname := "zhejiang_url_" + this.Timestamp
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "url_"); v != "" {
 			datacount++
@@ -121,6 +123,7 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 		in <- 1
 		return
 	}
+	log.Info("域名ok")
 	in <- 1
 }
 
@@ -129,11 +132,11 @@ func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+timestamp.GetHourTimestamp(-1)+"_other",
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_other",
 			convert.ToString(datacount), "")
 	}()
 
-	fname := "zhejiang_other_" + timestamp.GetHourTimestamp(-1)
+	fname := "zhejiang_other_" + this.Timestamp
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "mg_"); v != "" {
 			datacount++
@@ -143,6 +146,7 @@ func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 		in <- 1
 		return
 	}
+	log.Info("其他ok")
 	in <- 1
 }
 
@@ -151,7 +155,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_business_"+timestamp.GetHourTimestamp(-1),
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_business",
 			convert.ToString(datacount), "")
 	}()
 
@@ -191,7 +195,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 				continue
 			}
 			ad := convert.ToString(item["ad"])
-			ua := encrypt.DefaultBase64.Encode(convert.ToString(item["ua"]))
+			ua := encrypt.DefaultMd5.Encode(convert.ToString(item["ua"]))
 			cids := item["cids"].([]interface{})
 			ncids := make(map[string]int)
 			ncidsary := make([]string, 0, len(cids))
@@ -212,7 +216,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 
 		sid = sres.ScrollId
 	}
-
+	log.Info("电商ok")
 	in <- 1
 }
 
@@ -258,7 +262,7 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+timestamp.GetHourTimestamp(-1)+"_shop",
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_shop",
 			convert.ToString(datacount), "")
 	}()
 
@@ -304,16 +308,16 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 						continue
 					}
 					ad := convert.ToString(item["ad"])
-					ua := encrypt.DefaultBase64.Encode(convert.ToString(item["ua"]))
+					ua := encrypt.DefaultMd5.Encode(convert.ToString(item["ua"]))
 					datacount++
 					out <- fmt.Sprintf("%s\t%s\t%s", ad, ua, adids.AdvertId)
 				}
 
 				scrollid = sres.ScrollId
 			}
-			log.Info(adids)
 		}
 	}
+	log.Info("店铺ok")
 	in <- 1
 }
 
@@ -322,7 +326,7 @@ func (this *ZjPut) VisitorData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+timestamp.GetHourTimestamp(-1)+"_visitor",
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_visitor",
 			convert.ToString(datacount), "")
 	}()
 	m, err := lib.GetMongoObj()
@@ -339,11 +343,12 @@ func (this *ZjPut) VisitorData(out chan interface{}, in chan int8) {
 	qconf.Query = mongodb.MM{}
 	m.Query(qconf, func(info map[string]interface{}) {
 		ad := convert.ToString(info["ad"])
-		ua := convert.ToString(info["ua"])
+		ua := encrypt.DefaultMd5.Encode(encrypt.DefaultBase64.Decode(convert.ToString(info["ua"])))
 		aids := convert.ToString(info["aids"])
 		datacount++
 		out <- fmt.Sprintf("%s\t%s\t%s", ad, ua, aids)
 	})
+	log.Info("访客ok")
 	in <- 1
 }
 
@@ -355,7 +360,7 @@ func (this *ZjPut) tagDataStats() {
 			tagid := strings.TrimPrefix(k, fname)
 			tagids := strings.Split(tagid, "_")
 			// 标签统计数据 tags_stats , url_1461016800, 11111
-			lib.StatisticsData("tags_stats", fmt.Sprintf("zj_%s_%s_%s", timestamp.GetHourTimestamp(-1), tagids[0], tagids[1]),
+			lib.StatisticsData("tags_stats", fmt.Sprintf("zj_%s_%s_%s", this.Timestamp, tagids[0], tagids[1]),
 				convert.ToString(v), "incr")
 		}
 	}, true)
@@ -386,10 +391,10 @@ func (this *ZjPut) filterData() {
 
 // 保存广告对应的ad，ua
 func (this *ZjPut) saveAdvertSet() {
-	tname := "advert_tj_zj_" + timestamp.GetHourTimestamp(-1) + "_"
+	tname := "advert_tj_zj_" + this.Timestamp + "_"
 	fname := lib.GetConfVal("zhejiang::data_path") + tname
 	this.kf.IDAdUaSet(fname, func(info map[string]int) {
-		tm := timestamp.GetHourTimestamp(-1)
+		tm := this.Timestamp
 		for k, v := range info {
 			aid := strings.TrimPrefix(k, tname)
 			// 广告数量统计数据 advert_stats , zj_1461016800_1111, 11111
@@ -422,11 +427,11 @@ func (this *ZjPut) saveTraceToPutSys() {
 	rdb.Flush()
 	rdb.Close()
 	// 广告数量统计数据 put_stats , Zj_1461016800, 11111
-	lib.StatisticsData("put_stats", fmt.Sprintf("zj_%s", timestamp.GetHourTimestamp(-1)),
+	lib.StatisticsData("put_stats", fmt.Sprintf("zj_%s", this.Timestamp),
 		convert.ToString(adcount), "")
 }
 
-// 保存投放轨迹到电信ftp
+// 保存投放轨迹到电信redis
 func (this *ZjPut) saveTraceToDianxin() {
 	var (
 		db      = lib.GetConfVal("zhejiang::dx_redis_db")
@@ -441,10 +446,10 @@ func (this *ZjPut) saveTraceToDianxin() {
 	}
 	rdb.Auth(pwd)
 	rdb.SelectDb(db)
-
+	rdb.FlushDb()
+	// ua默认md5加密
 	this.kf.AdUaIdsSet(func(ad string, ua string, ids map[string]int8) {
-		ua = encrypt.DefaultBase64.Decode(ua)
-		var key = ad + "|" + strings.ToUpper(encrypt.DefaultMd5.Encode(ua))
+		var key = ad + "|" + strings.ToUpper(ua)
 		rdb.Set(key, "1")
 		adcount++
 	})
@@ -452,7 +457,7 @@ func (this *ZjPut) saveTraceToDianxin() {
 	rdb.Close()
 
 	// 广告数量统计数据 dx_stats , Zj_1461016800, 11111
-	lib.StatisticsData("dx_stats", fmt.Sprintf("zj_%s", timestamp.GetHourTimestamp(-1)),
+	lib.StatisticsData("dx_stats", fmt.Sprintf("zj_%s", this.Timestamp),
 		convert.ToString(adcount), "")
 }
 

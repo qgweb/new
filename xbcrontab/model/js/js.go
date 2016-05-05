@@ -225,6 +225,7 @@ func (this *JsPut) saveTraceToPutSys() {
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad
 		if ua != "ua" {
+			ua = encrypt.DefaultMd5.Encode(encrypt.DefaultBase64.Decode(ua))
 			key = encrypt.DefaultMd5.Encode(ad + "_" + ua)
 		}
 		for aid, _ := range aids {
