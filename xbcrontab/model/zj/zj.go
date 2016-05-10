@@ -49,7 +49,7 @@ type ZjPut struct {
 	putAdverts  map[string]int
 	putTags     map[string]map[string]int
 	shopAdverts map[string]ShopInfo
-	Timestamp string
+	Timestamp   string
 }
 
 // 店铺广告
@@ -465,14 +465,16 @@ func (this *ZjPut) Run() {
 	this.kf.AddFun(this.domainData)
 	this.kf.AddFun(this.otherData)
 	this.kf.AddFun(this.BusinessData)
-	this.kf.WriteFile()              //合成数据
-	this.tagDataStats()              //标签统计
-	this.filterData()                //过滤数据,生成ad，ua对应广告id
-	this.kf.Append(this.ShopData)    //追加店铺数据，应该店铺数据直接是ad,ua，广告id
-	this.kf.Append(this.VisitorData) //追加域名找回数据，同上格式
-	this.saveAdvertSet()             //保存广告对应轨迹，并统计每个广告对应的数量
-	this.saveTraceToPutSys()         //保存轨迹到投放系统
-	this.saveTraceToDianxin()        //保存轨迹到电信系统
+	this.kf.WriteFile()                     //合成数据
+	this.kf.UniqFile()                      //合并重复行数据
+	this.tagDataStats()                     //标签统计
+	this.filterData()                       //过滤数据,生成ad，ua对应广告id
+	this.kf.Append(this.ShopData, false)    //追加店铺数据，应该店铺数据直接是ad,ua，广告id
+	this.kf.Append(this.VisitorData, false) //追加域名找回数据，同上格式
+	this.kf.Sort()                          //排序去重
+	this.saveAdvertSet()                    //保存广告对应轨迹，并统计每个广告对应的数量
+	this.saveTraceToPutSys()                //保存轨迹到投放系统
+	this.saveTraceToDianxin()               //保存轨迹到电信系统
 }
 
 func (this *ZjPut) Clean() {

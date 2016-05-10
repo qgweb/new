@@ -277,6 +277,7 @@ func (this *JsPut) Run() {
 	this.kf.AddFun(this.domainData)
 	this.kf.AddFun(this.otherData)
 	this.kf.WriteFile()       //合成数据
+	this.kf.UniqFile()        //合并重复行数据
 	this.tagDataStats()       //标签统计
 	this.filterData()         //过滤数据,生成ad，ua对应广告id
 	this.saveAdvertSet()      //保存广告对应轨迹，并统计每个广告对应的数量

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"fmt"
 	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/convert"
 )
@@ -287,6 +288,64 @@ func (this *KVFile) WriteFile() error {
 	return nil
 }
 
+// 合并重复行
+func (this *KVFile) UniqFile() error {
+	nfname := this.fname + ".bakbakbak"
+	f, err := os.Open(this.fname)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	nf, err := os.Create(nfname)
+	if err != nil {
+		return err
+	}
+	defer nf.Close()
+
+	wffun := func(info AdUaAdverts) {
+		var ids = ""
+		for k, _ := range info.AId {
+			ids += k + ","
+		}
+		nf.WriteString(fmt.Sprintf("%s\t%s\t%s\n", info.Ad, info.UA, ids[0:len(ids)-1]))
+	}
+
+	bi := bufio.NewReader(f)
+	ad := AdUaAdverts{AId: make(map[string]int8)}
+	for {
+		line, err := bi.ReadString('\n')
+		if err == io.EOF || err != nil {
+			wffun(ad)
+			break
+		}
+
+		line = strings.TrimSpace(line)
+		infos := strings.Split(line, "\t")
+
+		if len(infos) < 3 {
+			continue
+		}
+
+		if (ad.Ad != infos[0] && ad.UA != infos[1]) && (ad.Ad != "" && ad.UA != "") {
+			wffun(ad)
+			ad.AId = make(map[string]int8)
+			ad.Ad = ""
+			ad.UA = ""
+		}
+
+		ad.Ad = infos[0]
+		ad.UA = infos[1]
+		for _, id := range strings.Split(infos[2], ",") {
+			ad.AId[id] = 1
+		}
+	}
+	os.Remove(this.fname)
+	os.Rename(nfname, this.fname)
+	os.Remove(nfname)
+	return nil
+}
+
 func (this *KVFile) createFile() (*os.File, error) {
 	f, err := os.Create(this.fname)
 	if err != nil {
@@ -381,7 +440,7 @@ func (this *KVFile) Origin(fun OriginFun) error {
 }
 
 // 追加数据
-func (this *KVFile) Append(fun AppendFun) error {
+func (this *KVFile) Append(fun AppendFun, issort bool) error {
 	f, err := os.OpenFile(this.fname, os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
 		return err
@@ -404,8 +463,15 @@ func (this *KVFile) Append(fun AppendFun) error {
 		}
 	}
 END:
-	this.sortuniqm()
+	if issort {
+		this.sortuniqm()
+	}
 	return nil
+}
+
+// 排序对外方法
+func (this *KVFile) Sort() {
+	this.sortuniqm()
 }
 
 // 过滤数据
