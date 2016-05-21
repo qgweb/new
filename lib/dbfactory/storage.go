@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/convert"
+	"github.com/qgweb/new/lib/encrypt"
 )
 
 //  例子
@@ -308,7 +309,9 @@ func (this *KVFile) UniqFile() error {
 		for k, _ := range info.AId {
 			ids += k + ","
 		}
-		nf.WriteString(fmt.Sprintf("%s\t%s\t%s\n", info.Ad, info.UA, ids[0:len(ids)-1]))
+		if ids != "" {
+			nf.WriteString(fmt.Sprintf("%s\t%s\t%s\n", info.Ad, info.UA, ids[0:len(ids)-1]))
+		}
 	}
 
 	bi := bufio.NewReader(f)
@@ -327,7 +330,7 @@ func (this *KVFile) UniqFile() error {
 			continue
 		}
 
-		if (ad.Ad != infos[0] && ad.UA != infos[1]) && (ad.Ad != "" && ad.UA != "") {
+		if (encrypt.DefaultMd5.Encode(ad.Ad+ad.UA) != encrypt.DefaultMd5.Encode(infos[0]+infos[1])) && (ad.Ad != "" && ad.UA != "") {
 			wffun(ad)
 			ad.AId = make(map[string]int8)
 			ad.Ad = ""
@@ -569,12 +572,11 @@ func (this *KVFile) AdUaIdsSet(fun AdUaIdsFun) error {
 
 		line = strings.TrimSpace(line)
 		infos := strings.Split(line, "\t")
-
 		if len(infos) < 3 {
 			continue
 		}
 
-		if (ad.Ad != infos[0] && ad.UA != infos[1]) && (ad.Ad != "" && ad.UA != "") {
+		if encrypt.DefaultMd5.Encode(ad.Ad+ad.UA) != encrypt.DefaultMd5.Encode(infos[0]+infos[1]) && (ad.Ad != "" && ad.UA != "") {
 			fun(ad.Ad, ad.UA, ad.AId)
 			ad.AId = make(map[string]int8)
 			ad.Ad = ""

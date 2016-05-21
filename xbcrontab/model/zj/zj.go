@@ -127,6 +127,30 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 	in <- 1
 }
 
+// 无限数据获取
+func (this *ZjPut) wapData(out chan interface{}, in chan int8) {
+	var datacount = 0
+	defer func() {
+		// 统计数据 jiangsu_put , url_1461016800, 11111
+		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_phone",
+			convert.ToString(datacount), "")
+	}()
+
+	fname := "zhejiang_url_phone_" + this.Timestamp
+	if err := lib.GetFdbData(fname, func(val string) {
+		if v := lib.AddPrefix(val, "phone_"); v != "" {
+			datacount++
+			out <- v
+		}
+	}); err != nil {
+		in <- 1
+		return
+	}
+	log.Info("无线ok")
+	in <- 1
+}
+
+
 // 其他杂项数据获取
 func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
@@ -465,6 +489,7 @@ func (this *ZjPut) Run() {
 	this.kf.AddFun(this.domainData)
 	this.kf.AddFun(this.otherData)
 	this.kf.AddFun(this.BusinessData)
+	//this.kf.AddFun(this.wapData)
 	this.kf.WriteFile()                     //合成数据
 	this.kf.UniqFile()                      //合并重复行数据
 	this.tagDataStats()                     //标签统计
