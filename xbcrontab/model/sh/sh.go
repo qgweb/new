@@ -39,10 +39,11 @@ func NewShPut() *ShPut {
 	var sh = &ShPut{}
 	sh.kf = dbfactory.NewKVFile(fmt.Sprintf("./%s.txt", convert.ToString(time.Now().Unix())))
 	sh.putTags = make(map[string]map[string]int)
-	sh.Timestamp = timestamp.GetHourTimestamp(-1)
+	sh.Timestamp = timestamp.GetDayTimestamp(-1)
 	sh.initPutAdverts()
 	sh.initPutTags("TAGS_3*", "tb_", "mg_")
 	sh.initPutTags("TAGS_5*", "url_", "")
+	log.Warn(sh.putAdverts)
 	return sh
 }
 
@@ -60,7 +61,8 @@ func (this *ShPut) filterPriceAdvert(aid string) bool {
 		return false
 	}
 	log.Info(js.Get("price").String())
-	if v, err := js.Get("price").Float64(); err == nil && v >= 0.8 {
+	if v, ok := js.Get("price").String(); ok == nil && (convert.ToFloat64(v) > 0.8) {
+		log.Info(1)
 		return true
 	}
 	return false
@@ -75,6 +77,7 @@ func (this *ShPut) initPutAdverts() {
 	rdb.SelectDb("0")
 	this.putAdverts = make(map[string]int)
 	alist := rdb.SMembers(lib.GetConfVal("shanghai::province_prefix"))
+	log.Info(alist)
 	for _, v := range alist {
 		if this.filterPriceAdvert(v) {
 			this.putAdverts[v] = 1
@@ -116,7 +119,6 @@ func (this *ShPut) domainData(out chan interface{}, in chan int8) {
 		lib.StatisticsData("dsource_stats", "sh_"+this.Timestamp+"_url",
 			convert.ToString(datacount), "")
 	}()
-
 	fname := "shanghai_url_" + this.Timestamp
 	if err := lib.GetFdbData(fname, func(val string) {
 		if v := lib.AddPrefix(val, "url_"); v != "" {
@@ -197,7 +199,7 @@ func (this *ShPut) saveTraceToPutSys() {
 		for aid, _ := range aids {
 			rdb.HSet(key, "advert:"+aid, aid)
 		}
-		rdb.Expire(key, 5400)
+		rdb.Expire(key, 86400)
 		adcount++
 	})
 	rdb.Flush()

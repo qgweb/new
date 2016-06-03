@@ -150,7 +150,6 @@ func (this *ZjPut) wapData(out chan interface{}, in chan int8) {
 	in <- 1
 }
 
-
 // 其他杂项数据获取
 func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
@@ -264,7 +263,13 @@ func (this *ZjPut) GetPutShopInfo() (list map[string]ShopInfo) {
 		}
 		sk = shopkeys[2]
 		sinfo.ShopId = sk
-		aids := rdb.SMembers(key)
+		oaids := rdb.SMembers(key)
+		aids := make([]string, 0, len(oaids))
+		for _, v := range oaids {
+			if _, ok := this.putAdverts[v]; ok {
+				aids = append(aids, v)
+			}
+		}
 		sinfo.ShopAdverts = make([]ShopAdvert, 0, len(aids))
 		for _, aid := range aids {
 			aaids := strings.Split(aid, "_")
