@@ -2,6 +2,7 @@ package rediscache
 
 import (
 	"fmt"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/juju/errors"
 )
@@ -89,6 +90,13 @@ func (this *MemCache) HGetAllKeys(key string) []string {
 		return res
 	}
 	return make([]string, 0)
+}
+
+func (this *MemCache) HGetAll(key string) map[string]string {
+	if res, err := redis.StringMap(this.db.Do("HGETALL", key)); err == nil {
+		return res
+	}
+	return make(map[string]string)
 }
 
 func (this *MemCache) HGetAllValue(key string) []string {

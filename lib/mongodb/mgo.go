@@ -2,11 +2,12 @@ package mongodb
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/juju/errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"sync"
-	"time"
 )
 
 type MM bson.M
@@ -30,6 +31,7 @@ type MongodbQueryConf struct {
 	Insert []interface{}
 	Index  []string
 	Update MM
+	Delete MM
 }
 
 type Mongodb struct {
@@ -143,6 +145,10 @@ func (this *Mongodb) Insert(qconf MongodbQueryConf) error {
 
 func (this *Mongodb) Create(qconf MongodbQueryConf) error {
 	return errors.Trace(this.conn.DB(qconf.Db).C(qconf.Table).Create(&mgo.CollectionInfo{}))
+}
+
+func (this *Mongodb) Delete(qconf MongodbQueryConf) error {
+	return errors.Trace(this.conn.DB(qconf.Db).C(qconf.Table).Remove(qconf.Delete))
 }
 
 func (this *Mongodb) Drop(qconf MongodbQueryConf) error {

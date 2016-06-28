@@ -128,12 +128,40 @@ func (this CproData) ReocrdCookie(param map[string]string) error {
 	return nil
 }
 
+func (this CproData) ReocrdCookieEx(param map[string]string) error {
+	var (
+		cp        = parseCookieParam(param)
+		conn      = db.GetHbaseConn()
+		tableName = "xu-cookie-ex"
+	)
+
+	if err := this.createTable(conn, tableName); err != nil {
+		return err
+	}
+
+	if !bson.IsObjectIdHex(cp.id) {
+		return errors.New("cookie-id参数错误")
+	}
+
+	put := hbase.NewPut([]byte(bson.NewObjectId().Hex()))
+	put.AddStringValue("base", "ckid", cp.id)
+	put.AddStringValue("base", "cox", cp.cox)
+	put.AddStringValue("base", "ua", cp.ua)
+	put.AddStringValue("base", "date", cp.date)
+	put.AddStringValue("base", "ip", cp.ip)
+	put.AddStringValue("base", "pid", cp.pid)
+	put.AddStringValue("base", "cid", cp.cid)
+	put.AddStringValue("base", "is_new", cp.is_new)
+	conn.Put(tableName, put)
+	return nil
+}
+
 // 域名访客找回
 func (this CproData) DomainVisitor(pkgId string, cookie string, domain string) error {
 	var (
-		conn       = db.GetHbaseConn()
-		date       = timestamp.GetDayTimestamp(0)
-		tableName  = "domain-cookie"
+		conn      = db.GetHbaseConn()
+		date      = timestamp.GetDayTimestamp(0)
+		tableName = "domain-cookie"
 	)
 
 	if err := this.createTable(conn, tableName); err != nil {

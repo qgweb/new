@@ -61,7 +61,7 @@ func (this *ShPut) filterPriceAdvert(aid string) bool {
 		return false
 	}
 	log.Info(js.Get("price").String())
-	if v, ok := js.Get("price").String(); ok == nil && (convert.ToFloat64(v) > 0.8) {
+	if v, ok := js.Get("price").String(); ok == nil && (convert.ToFloat64(v) >= 0.8) {
 		log.Info(1)
 		return true
 	}
