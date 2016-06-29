@@ -136,6 +136,14 @@ func (this *MemCache) Srem(key string, values interface{}) (int, error) {
 	return redis.Int(this.db.Do("SREM", key, values))
 }
 
+func (this *MemCache) Rpush(key string, value string) (int, error) {
+	return redis.Int(this.db.Do("RPUSH", key, value))
+}
+
+func (this *MemCache) Lpop(key string) (string, error) {
+	return redis.String(this.db.Do("LPOP", key))
+}
+
 func (this *MemCache) Flush() {
 	this.db.Flush()
 }
