@@ -1,26 +1,27 @@
 package main
 
 import (
-	"net"
-	"flag"
-	"github.com/ngaut/log"
-	"os"
-	"time"
-	"sync"
-	"os/exec"
 	"bytes"
+	"flag"
+	"net"
+	"os"
+	"os/exec"
+	"sync"
+	"time"
+
+	"github.com/ngaut/log"
 	"github.com/qgweb/new/lib/encrypt"
 )
 
 var (
-	tHost = flag.String("host", "", "server的地址")
-	tPort = flag.Int("port", 0, "server的端口")
-	tPath = flag.String("path", "/tmp", "文件存放路径")
-	scmd = flag.String("cmd","php","命令")
-	sfile = flag.String("cfile","","执行的文件")
+	tHost  = flag.String("host", "", "server的地址")
+	tPort  = flag.Int("port", 0, "server的端口")
+	tPath  = flag.String("path", "/tmp", "文件存放路径")
+	scmd   = flag.String("cmd", "php", "命令")
+	sfile  = flag.String("cfile", "", "执行的文件")
 	prefix = ""
-	fd *os.File
-	lock sync.Mutex
+	fd     *os.File
+	lock   sync.Mutex
 )
 
 func init() {
@@ -43,19 +44,22 @@ func initFd() {
 	prefix = time.Now().Format("2006-01-02")
 	fname := prefix + ".txt"
 	var err error
-	fd, err = os.OpenFile(fname, os.O_CREATE | os.O_APPEND | os.O_RDWR, 0666)
+	fd, err = os.OpenFile(fname, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func writeLog(buf []byte) error {
+	if len(buf) == 0 {
+		return nil
+	}
 	lock.Lock()
 	defer lock.Unlock()
 	if prefix != time.Now().Format("2006-01-02") {
 		fd.Close()
 		ndate := time.Now().Format("2006-01-02")
-		err := os.Rename(prefix + ".txt", ndate + ".txt")
+		err := os.Rename(prefix+".txt", ndate+".txt")
 		if err != nil {
 			return err
 		}
@@ -80,11 +84,11 @@ func script(buf []byte) []byte {
 	if err != nil {
 		return nil
 	}
-	return  out.Bytes()
+	return out.Bytes()
 }
 
 func deal(df *net.UDPAddr, buf []byte) {
-	res:=script(buf)
+	res := script(buf)
 	if res == nil {
 		return
 	}
@@ -100,8 +104,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	buf := make([]byte, 1024)
 	for {
+		buf := make([]byte, 3096)
 		r, dr, err := l.ReadFromUDP(buf)
 		if err != nil {
 			log.Error("读取数据错误,错误信息为:", err)
