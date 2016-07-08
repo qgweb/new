@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"time"
+
 	"github.com/hpcloud/tail"
 	"github.com/ngaut/log"
 )
@@ -26,12 +28,6 @@ func init() {
 }
 
 func main() {
-	conn, err := net.Dial("udp", *tHost)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
 	t, err := tail.TailFile(*tFile, tail.Config{Follow: true,
 		Location: &tail.SeekInfo{Offset: 0, Whence: os.SEEK_END}})
 	if err != nil {
@@ -41,13 +37,17 @@ func main() {
 	for line := range t.Lines {
 		if *tTag != "" {
 			if strings.Contains(line.Text, *tTag) {
+				conn, err := net.DialTimeout("udp", *tHost, time.Second*3)
+				if err != nil {
+					log.Error(err)
+					continue
+				}
 				conn.Write([]byte(line.Text))
 				if *debug != "" {
 					log.Info(line.Text)
 				}
+				conn.Close()
 			}
-		} else {
-			conn.Write([]byte(line.Text))
 		}
 	}
 }

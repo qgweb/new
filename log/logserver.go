@@ -58,11 +58,11 @@ func writeLog(buf []byte) error {
 	defer lock.Unlock()
 	if prefix != time.Now().Format("2006-01-02") {
 		fd.Close()
-		ndate := time.Now().Format("2006-01-02")
-		err := os.Rename(prefix+".txt", ndate+".txt")
-		if err != nil {
-			return err
-		}
+		// ndate := time.Now().Format("2006-01-02")
+		// err := os.Rename(prefix+".txt", ndate+".txt")
+		// if err != nil {
+		// 	return err
+		// }
 		initFd()
 	}
 
