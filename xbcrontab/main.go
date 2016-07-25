@@ -1,11 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/codegangsta/cli"
 	"github.com/qgweb/new/xbcrontab/model/js"
 	"github.com/qgweb/new/xbcrontab/model/sh"
 	"github.com/qgweb/new/xbcrontab/model/zj"
-	"os"
+	"github.com/qgweb/new/xbcrontab/model/zjyd"
 )
 
 func main() {
@@ -18,6 +20,7 @@ func main() {
 		js.CliPutData(),
 		zj.CliPutData(),
 		sh.CliPutData(),
+		zjyd.CliPutData(),
 	}
 
 	app.Run(os.Args)

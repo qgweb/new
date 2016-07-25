@@ -140,7 +140,7 @@ func (this *MemCache) Rpush(key string, value string) (int, error) {
 	return redis.Int(this.db.Do("RPUSH", key, value))
 }
 
-func (this *MemCache) Lpop(key string) (string, error) {
+func (this *MemCache) Lpop(key string) (interface{}, error) {
 	return redis.String(this.db.Do("LPOP", key))
 }
 
