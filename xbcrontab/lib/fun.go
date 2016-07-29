@@ -5,12 +5,14 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/qgweb/new/lib/config"
 	"github.com/qgweb/new/lib/mongodb"
@@ -53,6 +55,19 @@ func GetConfVal(key string) string {
 
 // 统计数据
 func StatisticsData(db, key, val, opt string) error {
+	client := http.Client{
+		Transport: &http.Transport{
+			Dial: func(netw, addr string) (net.Conn, error) {
+				deadline := time.Now().Add(10 * time.Second)
+				c, err := net.DialTimeout(netw, addr, time.Second*10)
+				if err != nil {
+					return nil, err
+				}
+				c.SetDeadline(deadline)
+				return c, nil
+			},
+		},
+	}
 	surl := GetConfVal("default::stats_url")
 	v := url.Values{}
 	v.Set("db", db)
@@ -60,7 +75,7 @@ func StatisticsData(db, key, val, opt string) error {
 	v.Set("value", val)
 	v.Set("opt", opt)
 
-	res, err := http.Post(surl+"api/create", "application/x-www-form-urlencoded",
+	res, err := client.Post(surl+"api/create", "application/x-www-form-urlencoded",
 		ioutil.NopCloser(strings.NewReader(v.Encode())))
 	if err != nil {
 		return err
@@ -133,12 +148,12 @@ func GetMongoObj() (*mongodb.Mongodb, error) {
 
 // 数据添加前缀
 func AddPrefix(val string, pre string) string {
-	var list = strings.Split(val, "\t");
+	var list = strings.Split(val, "\t")
 	if len(list) != 3 {
 		return ""
 	}
-	list[2] = pre + strings.Join(strings.Split(list[2], ","), "," + pre)
-	return strings.Join(list,"\t")
+	list[2] = pre + strings.Join(strings.Split(list[2], ","), ","+pre)
+	return strings.Join(list, "\t")
 }
 
 // 是否是mongoid
