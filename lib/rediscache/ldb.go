@@ -161,3 +161,7 @@ func (this *MemCache) Clean(prefix string) {
 		this.db.Flush()
 	}
 }
+
+func (this *MemCache) Receive() (interface{}, error) {
+	return this.db.Receive()
+}
