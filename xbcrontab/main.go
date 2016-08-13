@@ -8,6 +8,7 @@ import (
 	"github.com/qgweb/new/xbcrontab/model/sh"
 	"github.com/qgweb/new/xbcrontab/model/zj"
 	"github.com/qgweb/new/xbcrontab/model/zjyd"
+	"github.com/qgweb/new/xbcrontab/model/cookie"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 		zj.CliPutData(),
 		sh.CliPutData(),
 		zjyd.CliPutData(),
+		cookie.CliPutData(),
+
 	}
 
 	app.Run(os.Args)

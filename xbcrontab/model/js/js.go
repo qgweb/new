@@ -101,7 +101,7 @@ func (this *JsPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
 		if lib.IsMongo(rkey) {
 			rkey = prefix2 + rkey
 		} else {
@@ -123,7 +123,7 @@ func (this *JsPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_url",
+		lib.StatisticsData("dsource_stats", "js_" + timestamp.GetHourTimestamp(-1) + "_url",
 			convert.ToString(datacount), "")
 	}()
 
@@ -145,7 +145,7 @@ func (this *JsPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "js_"+timestamp.GetHourTimestamp(-1)+"_other",
+		lib.StatisticsData("dsource_stats", "js_" + timestamp.GetHourTimestamp(-1) + "_other",
 			convert.ToString(datacount), "")
 	}()
 
@@ -215,12 +215,17 @@ func (this *JsPut) saveAdvertSet() {
 
 // 保存投放轨迹到投放系统
 func (this *JsPut) saveTraceToPutSys() {
-	rdb, err := lib.GetRedisObj()
+	rdb, err := lib.GetPutRedisObj("put_redis_proxy_url")
 	if err != nil {
 		log.Error("redis连接失败", err)
 		return
 	}
-	rdb.SelectDb("1")
+	go func() {
+		for {
+			rdb.Receive()
+		}
+	}()
+	//rdb.SelectDb("1")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad
@@ -229,7 +234,7 @@ func (this *JsPut) saveTraceToPutSys() {
 			key = encrypt.DefaultMd5.Encode(ad + "_" + ua)
 		}
 		for aid, _ := range aids {
-			rdb.HSet(key, "advert:"+aid, aid)
+			rdb.HSet(key, "advert:" + aid, aid)
 		}
 		rdb.Expire(key, 5400)
 		adcount++
@@ -244,10 +249,10 @@ func (this *JsPut) saveTraceToPutSys() {
 // 保存投放轨迹到电信ftp
 func (this *JsPut) saveTraceToDianxin() {
 	var (
-		ftp     = lib.GetConfVal("jiangsu::ftp_path")
-		ppath   = lib.GetConfVal("jiangsu::put_path")
-		rk      = "account.10046.sha1." + time.Now().Add(-time.Hour).Format("200601021504")
-		fname   = ppath + "/" + rk
+		ftp = lib.GetConfVal("jiangsu::ftp_path")
+		ppath = lib.GetConfVal("jiangsu::put_path")
+		rk = "account.10046.sha1." + time.Now().Add(-time.Hour).Format("200601021504")
+		fname = ppath + "/" + rk
 		adcount = 0
 	)
 

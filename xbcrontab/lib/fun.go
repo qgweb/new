@@ -59,7 +59,7 @@ func StatisticsData(db, key, val, opt string) error {
 		Transport: &http.Transport{
 			Dial: func(netw, addr string) (net.Conn, error) {
 				deadline := time.Now().Add(10 * time.Second)
-				c, err := net.DialTimeout(netw, addr, time.Second*10)
+				c, err := net.DialTimeout(netw, addr, time.Second * 10)
 				if err != nil {
 					return nil, err
 				}
@@ -75,7 +75,7 @@ func StatisticsData(db, key, val, opt string) error {
 	v.Set("value", val)
 	v.Set("opt", opt)
 
-	res, err := client.Post(surl+"api/create", "application/x-www-form-urlencoded",
+	res, err := client.Post(surl + "api/create", "application/x-www-form-urlencoded",
 		ioutil.NopCloser(strings.NewReader(v.Encode())))
 	if err != nil {
 		return err
@@ -128,6 +128,15 @@ func GetRedisObj() (*rediscache.MemCache, error) {
 }
 
 // 获取redis对象
+func GetPutRedisObj(key string) (*rediscache.MemCache, error) {
+	rurls := strings.Split(GetConfVal("default::" + key), ":")
+	conf := rediscache.MemConfig{}
+	conf.Host = rurls[0]
+	conf.Port = rurls[1]
+	return rediscache.New(conf)
+}
+
+// 获取redis对象
 func GetZJDxRedisObj() (*rediscache.MemCache, error) {
 	rurls := strings.Split(GetConfVal("zhejiang::dx_redis_url"), ":")
 	conf := rediscache.MemConfig{}
@@ -152,8 +161,22 @@ func AddPrefix(val string, pre string) string {
 	if len(list) != 3 {
 		return ""
 	}
-	list[2] = pre + strings.Join(strings.Split(list[2], ","), ","+pre)
+	list[2] = pre + strings.Join(strings.Split(list[2], ","), "," + pre)
 	return strings.Join(list, "\t")
+}
+
+// 数据添加前缀
+func AddPrefix2(val string, pre string) string {
+	var nlist = make([]string, 3)
+	var list = strings.Split(val, "\t")
+	if len(list) != 2 {
+		return ""
+	}
+	nlist[0] = list[0]
+	nlist[1] = "ua"
+	nlist[2] = list[1]
+	nlist[2] = pre + strings.Join(strings.Split(nlist[2], ","), "," + pre)
+	return strings.Join(nlist, "\t")
 }
 
 // 是否是mongoid

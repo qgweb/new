@@ -1,4 +1,4 @@
-package zjyd
+package cookie
 
 import (
 	"fmt"
@@ -35,6 +35,8 @@ func NewCookiePut() *CookiePut {
 	zj.Timestamp = timestamp.GetHourTimestamp(-1)
 	zj.initPutAdverts()
 	zj.initPutTags("TAGS_5*", "cookie_", "")
+	log.Info(zj.putAdverts)
+	log.Info(zj.putTags)
 	return zj
 }
 
@@ -100,7 +102,7 @@ func (this *CookiePut) coikieData(out chan interface{}, in chan int8) {
 
 	fname := "zhejiang_cookie_" + this.Timestamp
 	if err := lib.GetFdbData(fname, func(val string) {
-		if v := lib.AddPrefix(val, "cookie_"); v != "" {
+		if v := lib.AddPrefix2(val, "cookie_"); v != "" {
 			datacount++
 			out <- v
 		}
@@ -151,14 +153,14 @@ func (this *CookiePut) filterData() {
 
 // 保存广告对应的ad，ua
 func (this *CookiePut) saveAdvertSet() {
-	tname := "advert_tj_zj_" + this.Timestamp + "_"
+	tname := "advert_tj_zj_cookie_" + this.Timestamp + "_"
 	fname := lib.GetConfVal("cookie::data_path") + tname
 	this.kf.IDAdUaSet(fname, func(info map[string]int) {
 		tm := this.Timestamp
 		for k, v := range info {
 			aid := strings.TrimPrefix(k, tname)
 			// 广告数量统计数据 advert_stats , zj_1461016800_1111, 11111
-			lib.StatisticsData("advert_stats", fmt.Sprintf("zj_cookie_%s__%s", tm, aid),
+			lib.StatisticsData("advert_stats", fmt.Sprintf("zj_cookie_%s_%s", tm, aid),
 				convert.ToString(v), "incr")
 		}
 	}, false)
@@ -166,7 +168,7 @@ func (this *CookiePut) saveAdvertSet() {
 
 // 保存投放轨迹到投放系统
 func (this *CookiePut) saveTraceToPutSys() {
-	rdb, err := lib.GetRedisObj()
+	rdb, err := lib.GetPutRedisObj("put_redis_proxy_url")
 	if err != nil {
 		log.Error("redis连接失败", err)
 		return
@@ -176,7 +178,7 @@ func (this *CookiePut) saveTraceToPutSys() {
 			rdb.Receive()
 		}
 	}()
-	rdb.SelectDb("1")
+	//rdb.SelectDb("1")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad

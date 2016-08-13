@@ -87,7 +87,7 @@ func (this *ZjPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
 		if lib.IsMongo(rkey) {
 			rkey = prefix2 + rkey
 		} else {
@@ -109,7 +109,7 @@ func (this *ZjPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_url",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_url",
 			convert.ToString(datacount), "")
 	}()
 
@@ -132,7 +132,7 @@ func (this *ZjPut) wapData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_phone",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_phone",
 			convert.ToString(datacount), "")
 	}()
 
@@ -155,7 +155,7 @@ func (this *ZjPut) otherData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_other",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_other",
 			convert.ToString(datacount), "")
 	}()
 
@@ -178,7 +178,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_business",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_business",
 			convert.ToString(datacount), "")
 	}()
 
@@ -228,7 +228,7 @@ func (this *ZjPut) BusinessData(out chan interface{}, in chan int8) {
 				}
 			}
 			for k, _ := range ncids {
-				ncidsary = append(ncidsary, "tb_"+k)
+				ncidsary = append(ncidsary, "tb_" + k)
 			}
 			if len(ncidsary) == 0 {
 				continue
@@ -291,7 +291,7 @@ func (this *ZjPut) ShopData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_shop",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_shop",
 			convert.ToString(datacount), "")
 	}()
 
@@ -355,7 +355,7 @@ func (this *ZjPut) VisitorData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 zhejiang_put , other_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "zj_"+this.Timestamp+"_visitor",
+		lib.StatisticsData("dsource_stats", "zj_" + this.Timestamp + "_visitor",
 			convert.ToString(datacount), "")
 	}()
 	m, err := lib.GetMongoObj()
@@ -435,12 +435,17 @@ func (this *ZjPut) saveAdvertSet() {
 
 // 保存投放轨迹到投放系统
 func (this *ZjPut) saveTraceToPutSys() {
-	rdb, err := lib.GetRedisObj()
+	rdb, err := lib.GetPutRedisObj("put_redis_proxy_url")
 	if err != nil {
 		log.Error("redis连接失败", err)
 		return
 	}
-	rdb.SelectDb("1")
+	go func() {
+		for {
+			rdb.Receive()
+		}
+	}()
+	//rdb.SelectDb("1")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad
@@ -448,7 +453,7 @@ func (this *ZjPut) saveTraceToPutSys() {
 			key = encrypt.DefaultMd5.Encode(ad + "_" + ua)
 		}
 		for aid, _ := range aids {
-			rdb.HSet(key, "advert:"+aid, aid)
+			rdb.HSet(key, "advert:" + aid, aid)
 		}
 		rdb.Expire(key, 5400)
 		adcount++
@@ -463,8 +468,8 @@ func (this *ZjPut) saveTraceToPutSys() {
 // 保存投放轨迹到电信redis
 func (this *ZjPut) saveTraceToDianxin() {
 	var (
-		db      = lib.GetConfVal("zhejiang::dx_redis_db")
-		pwd     = lib.GetConfVal("zhejiang::dx_redis_pwd")
+		db = lib.GetConfVal("zhejiang::dx_redis_db")
+		pwd = lib.GetConfVal("zhejiang::dx_redis_pwd")
 		adcount = 0
 	)
 
@@ -477,6 +482,11 @@ func (this *ZjPut) saveTraceToDianxin() {
 	rdb.SelectDb(db)
 	rdb.FlushDb()
 	// ua默认md5加密
+	go func() {
+		for {
+			rdb.Receive()
+		}
+	}()
 	this.kf.AdUaIdsSet(func(ad string, ua string, ids map[string]int8) {
 		var key = ad + "|" + strings.ToUpper(ua)
 		rdb.Set(key, "1")

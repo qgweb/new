@@ -94,7 +94,7 @@ func (this *ShPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 	}
 	rdb.SelectDb("0")
 	for _, key := range rdb.Keys(tagkey) {
-		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*")+"_")
+		rkey := strings.TrimPrefix(key, strings.TrimSuffix(tagkey, "*") + "_")
 		if lib.IsMongo(rkey) {
 			rkey = prefix2 + rkey
 		} else {
@@ -116,7 +116,7 @@ func (this *ShPut) domainData(out chan interface{}, in chan int8) {
 	var datacount = 0
 	defer func() {
 		// 统计数据 jiangsu_put , url_1461016800, 11111
-		lib.StatisticsData("dsource_stats", "sh_"+this.Timestamp+"_url",
+		lib.StatisticsData("dsource_stats", "sh_" + this.Timestamp + "_url",
 			convert.ToString(datacount), "")
 	}()
 	fname := "shanghai_url_" + this.Timestamp
@@ -187,17 +187,22 @@ func (this *ShPut) saveAdvertSet() {
 
 // 保存投放轨迹到投放系统
 func (this *ShPut) saveTraceToPutSys() {
-	rdb, err := lib.GetRedisObj()
+	rdb, err := lib.GetPutRedisObj("put_redis_proxy_url")
 	if err != nil {
 		log.Error("redis连接失败", err)
 		return
 	}
-	rdb.SelectDb("1")
+	go func() {
+		for {
+			rdb.Receive()
+		}
+	}()
+	//rdb.SelectDb("1")
 	adcount := 0
 	this.kf.AdUaIdsSet(func(ad string, ua string, aids map[string]int8) {
 		key := ad
 		for aid, _ := range aids {
-			rdb.HSet(key, "advert:"+aid, aid)
+			rdb.HSet(key, "advert:" + aid, aid)
 		}
 		rdb.Expire(key, 86400)
 		adcount++
