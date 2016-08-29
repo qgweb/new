@@ -128,12 +128,15 @@ func GetRedisObj() (*rediscache.MemCache, error) {
 }
 
 // 获取redis对象
-func GetPutRedisObj(key string) (*rediscache.MemCache, error) {
+func GetPutRedisObj(key string) (conn *rediscache.MemCache, err error) {
 	rurls := strings.Split(GetConfVal("default::" + key), ":")
 	conf := rediscache.MemConfig{}
 	conf.Host = rurls[0]
 	conf.Port = rurls[1]
-	return rediscache.New(conf)
+	conf.Db = rurls[2]
+	conn, err = rediscache.New(conf)
+	conn.SelectDb(conf.Db)
+	return
 }
 
 // 获取redis对象

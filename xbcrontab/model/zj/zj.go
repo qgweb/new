@@ -76,6 +76,8 @@ func (this *ZjPut) initPutAdverts() {
 	for _, v := range alist {
 		this.putAdverts[v] = 1
 	}
+	//添加特殊广告
+	this.putAdverts["99999"] = 1
 	rdb.Close()
 }
 
@@ -102,6 +104,8 @@ func (this *ZjPut) initPutTags(tagkey string, prefix1 string, prefix2 string) {
 			}
 		}
 	}
+	//特殊标签
+	this.putTags["url_FFF"] = map[string]int{"99999":1}
 }
 
 // 域名数据获取
@@ -407,6 +411,7 @@ func (this *ZjPut) filterData() {
 				}
 			}
 		}
+		log.Info(advertIds)
 		var aids = make([]string, 0, len(advertIds))
 		for k := range advertIds {
 			aids = append(aids, k)

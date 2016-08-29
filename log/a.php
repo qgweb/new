@@ -102,6 +102,7 @@ class Encrypt
     }
 
 }
+
 function fn_parse_url($str)
 {
     $data = array();
@@ -135,6 +136,7 @@ function fn_parse_url($str)
     }
     return $data;
 }
+
 if (count($argv) < 2) {
     echo "";
     exit;
@@ -158,13 +160,35 @@ if (!isset($pu['u'])) {
     echo "";
     exit;
 }
-$msg = Encrypt::initialise()->decode(urldecode($pu['u']),"&^*84558&#1534#$!");
-$pmsg = fn_parse_url($msg);
-if (!isset($pmsg["cox"])) {
+$msg = Encrypt::initialise()->decode(urldecode($pu['u']), "&^*84558&#1534#$!");
+if (!$msg) {
     echo "";
     exit;
 }
 
-echo $pmsg["hd"]."\t".$pmsg["cox"]."\t".base64_encode(substr($info[7],1,strlen($info[7])-2))."\n";
+$pmsg = fn_parse_url($msg);
+echo json_encode($pmsg);
+exit;
+$cox = "";
 
+if (isset($pmsg["cox"]) && !empty($pmsg["cox"])) {
+    $cox = $pmsg["cox"];
+}
+if (isset($pmsg["js_cox"]) && !empty($pmsg["js_cox"])) {
+    $cox = $pmsg["js_cox"];
+}
+if (isset($pmsg["js2_cox"]) && !empty($pmsg["js2_cox"])) {
+    $cox = $pmsg["js2_cox"];
+}
+if (isset($pmsg["sh_cox"]) && !empty($pmsg["sh_cox"])) {
+    $cox = $pmsg["sh_cox"];
+}
 
+echo json_encode(array(
+    'ua' => substr($info[7], 1, strlen($info[7]) - 2),
+    'ad' => urldecode($cox),
+    'hd' => $pmsg["hd"],
+    'pd' => $pmsg["pd"],
+    'lftu' => urldecode($pmsg['lftu']),
+    'ltu' => urldecode($pmsg['ltu']),
+));

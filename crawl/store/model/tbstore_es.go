@@ -173,14 +173,14 @@ func (this *TaobaoESStore) getBrands(goods []Goods) []string {
 
 func (this *TaobaoESStore) pushTagToMap(cd *CombinationData) {
 	var (
-		db1      = "map_trace"
-		db2      = "map_trace_search"
-		table    = "map"
-		date     = timestamp.GetTimestamp(fmt.Sprintf("%s %s:%s:%s", cd.Date, cd.Clock, "00", "00"))
-		id       = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
+		db1 = "map_trace"
+		db2 = "map_trace_search"
+		table = "map"
+		date = timestamp.GetTimestamp(fmt.Sprintf("%s %s:%s:%s", cd.Date, cd.Clock, "00", "00"))
+		id = encrypt.DefaultMd5.Encode(date + cd.Ad + encrypt.DefaultBase64.Encode(cd.Ua))
 		tagNames = this.getTagNames(cd.Ginfos)
-		brands   = this.getBrands(cd.Ginfos)
-		geo      = GetLonLat(cd.Ad, this.geohost)
+		brands = this.getBrands(cd.Ginfos)
+		geo = GetLonLat(cd.Ad, this.geohost)
 	)
 
 	info := map[string]interface{}{
@@ -222,8 +222,8 @@ func (this *TaobaoESStore) Save(info interface{}) {
 	this.saveGoods(cd.Ginfos)
 	this.saveAdTrace(cd)
 	this.saveShopTrace(cd)
-	this.pushTagToMap(cd)
-	if this.bulk.NumberOfActions()%100 == 0 {
+	//this.pushTagToMap(cd)
+	if this.bulk.NumberOfActions() % 100 == 0 {
 		log.Info(this.bulk.Do())
 	}
 }
