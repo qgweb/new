@@ -7,6 +7,7 @@ import (
 	"github.com/ngaut/log"
 	"github.com/bitly/go-nsq"
 	"fmt"
+	"os"
 )
 
 var (
@@ -29,23 +30,21 @@ func main() {
 		log.Fatal(err)
 	}
 	t, err := tail.TailFile(*tFile, tail.Config{Follow: true,
-		})
+		Location: &tail.SeekInfo{Offset: 0, Whence: os.SEEK_END}})
 	//Location: &tail.SeekInfo{Offset: 0, Whence: os.SEEK_END}
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for line := range t.Lines {
-		fmt.Println(line.Text)
 		if *tTag != "" {
 			for k, tag := range strings.Split(*tTag, "|") {
 				var ks = []string{"pv", "click", "other"}
 				if strings.Contains(line.Text, tag) {
-					fmt.Println(1)
+					fmt.Println(fmt.Println(line.Text))
 					pub.Publish("log", []byte(ks[k] + "\t" + line.Text))
 				}
 			}
-
 		}
 	}
 }

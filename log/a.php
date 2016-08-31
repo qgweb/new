@@ -167,8 +167,8 @@ if (!$msg) {
 }
 
 $pmsg = fn_parse_url($msg);
-echo json_encode($pmsg);
-exit;
+//echo json_encode($pmsg);
+//exit;
 $cox = "";
 
 if (isset($pmsg["cox"]) && !empty($pmsg["cox"])) {

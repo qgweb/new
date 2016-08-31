@@ -159,6 +159,9 @@ func (th *TailHandler) get_cookie(info string) string {
 	var mm = make(map[string]string)
 	for _, v := range strings.Split(info, ";") {
 		vv := strings.Split(strings.TrimSpace(v), "=")
+		if len(vv) < 2 {
+			continue
+		}
 		mm[vv[0]] = vv[1]
 	}
 
@@ -167,10 +170,30 @@ func (th *TailHandler) get_cookie(info string) string {
 	}
 	return ""
 }
+
+func (th *TailHandler) PvParamCheck(info url.Values) bool {
+	if _, ok := info["pd"]; !ok {
+		return false
+	}
+	if _, ok := info["hd"]; !ok {
+		return false
+	}
+	if _, ok := info["ltu"]; !ok {
+		return false
+	}
+	if _, ok := info["lftu"]; !ok {
+		return false
+	}
+	return true
+}
+
 func (th *TailHandler) Pv(info []string) {
 	var ml MLog
 	ud, err := th.pv_param(info[3])
 	if err != nil {
+		return
+	}
+	if !th.PvParamCheck(ud) {
 		return
 	}
 	p, c := th.getIp(info)
@@ -216,9 +239,11 @@ func (th *TailHandler) click_money(adwid int, aid int) (f1 float32, f2 float32) 
 	sql = dbConn.BSQL().Select("price").From("nxu_advert").Where("id=?").GetSQL()
 	info, err = dbConn.Get(sql, aid)
 	if err != nil {
+		log.Error(err, adwid, aid)
 		return 0, 0
 	}
 	f1 = convert.ToFloat32(info["price"])
+	log.Error(f1, convert.ToFloat32(fmt.Sprintf("%.2f", f1 * rate)))
 	return f1, convert.ToFloat32(fmt.Sprintf("%.2f", f1 * rate))
 }
 
