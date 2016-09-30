@@ -79,6 +79,7 @@ type MLog struct {
 	UA       string `bson:"ua"`
 	Cookie   string `bson:"cookie"`
 	CusId    string `bson:"string"`  //客户id（ad+ua+cookie）
+	CusId2   string `bson:"cus_id"`  //客户id（ad+ua+cookie）
 	Clock    int `bson:"clock"`
 	Date     int `bson:"date"`
 	Fmoney   float32 `bson:"fmoney"` //折扣后的钱
@@ -190,6 +191,7 @@ func (th *TailHandler) PvParamCheck(info url.Values) bool {
 func (th *TailHandler) Pv(info []string) {
 	var ml MLog
 	ud, err := th.pv_param(info[3])
+	//log.Info(ud["lftu"])
 	if err != nil {
 		return
 	}
@@ -206,10 +208,14 @@ func (th *TailHandler) Pv(info []string) {
 	ml.Click = 0
 	ml.Clock = convert.ToInt(time.Now().Format("15"))
 	ml.Date = convert.ToInt(timestamp.GetDayTimestamp(0))
-	ml.Url = th.get_url(ud["ltu"][0], ud["lftu"][0])
+	ml.Url = strings.TrimSpace(th.get_url(ud["ltu"][0], ud["lftu"][0]))
+	if strings.Contains(ml.Url,"cpro.9xu.com") {
+		log.Error(ud)
+	}
 	ml.Domain = th.get_domain(ml.Url)
 	ml.Cookie = th.get_cookie(info[9])
 	ml.CusId = encrypt.DefaultMd5.Encode(ml.AD + ml.UA + ml.Cookie)
+	ml.CusId2 = ml.CusId
 	ml.Fmoney = 0
 	ml.Money = 0
 	ml.PV = 1
@@ -268,10 +274,11 @@ func (th *TailHandler) Click(info []string) {
 	ml.Click = 1
 	ml.Clock = convert.ToInt(time.Now().Format("15"))
 	ml.Date = convert.ToInt(timestamp.GetDayTimestamp(0))
-	ml.Url = th.get_url(th.getmap(exmap, "ltu"), th.getmap(exmap, "lftu"))
+	ml.Url = strings.TrimSpace(th.get_url(th.getmap(exmap, "ltu"), th.getmap(exmap, "lftu")))
 	ml.Domain = th.get_domain(ml.Url)
 	ml.Cookie = th.get_cookie(info[9])
 	ml.CusId = encrypt.DefaultMd5.Encode(ml.AD + ml.UA + ml.Cookie)
+	ml.CusId2 = ml.CusId
 	ml.Money, ml.Fmoney = th.click_money(ml.AdwId, ml.AdId)
 	if _, ok := th.SouceMap[th.getmap(exmap, "pd")]; ok {
 		ml.Source = 1
@@ -342,7 +349,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cus.AddHandler(&TailHandler{SouceMap:getSourceMap()})
+	var th = &TailHandler{SouceMap:getSourceMap()}
+	go func() {
+		t := time.NewTicker(time.Hour)
+		for {
+			select {
+			case <-t.C:
+				th.SouceMap = getSourceMap()
+			}
+		}
+	}()
+
+	cus.AddHandler(th)
 
 	if err := cus.ConnectToNSQD(*nsqhost); err != nil {
 		log.Fatal(err)
